@@ -12,8 +12,9 @@ ils alimentent les variables `DB_*` de l'application.
 ## 2. Application
 
 - **Source** : dépôt GitHub `opmvpc/ifosup-display`, branche `main`.
-- **Build pack** : `Dockerfile` (le `Dockerfile` à la racine ; les fichiers
-  `docker-compose*.yml` du repo servent uniquement au poste local).
+- **Build pack** : `Docker Compose` avec `docker-compose.coolify.yml` (recommandé, voir
+  la section 4), ou `Dockerfile` en déclarant les volumes dans l'interface.
+  `docker-compose.yml` et `docker-compose.dev.yml` servent uniquement au poste local.
 - **Port exposé** : `80`.
 - **Domaine** : le domaine de l'école, HTTPS activé (Coolify gère le certificat).
 
@@ -57,6 +58,44 @@ slides (ticket [IFO-005](tickets/IFO-005-persistance-storage.md)) :
 |---|---|
 | `/app/storage/app` | fichiers importés et médias des slides |
 | `/app/storage/logs` | journaux applicatifs |
+
+Deux façons de les obtenir, au choix.
+
+### Option A — les déclarer dans le dépôt (recommandé)
+
+Sélectionner le build pack **« Docker Compose »** dans Coolify et pointer sur
+`docker-compose.coolify.yml`, versionné à la racine. Il déclare les deux volumes
+nommés, l'exposition du port 80 et la liste des variables attendues. Avantage : la
+configuration de persistance vit dans le dépôt, personne ne peut l'oublier en recréant
+l'application.
+
+Ce fichier refuse de démarrer si `APP_KEY`, `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` ou
+`DB_PASSWORD` manquent — le déploiement échoue avec un message explicite plutôt que de
+lancer une application cassée. Comportement vérifié :
+
+```
+error while interpolating services.app.environment.[]:
+required variable APP_KEY is missing a value: APP_KEY doit etre defini dans Coolify
+```
+
+### Option B — les déclarer dans l'interface
+
+En restant sur le build pack « Dockerfile », ajouter les deux volumes dans l'onglet
+*Storages* de l'application. C'est une manipulation unique, mais elle n'est écrite
+nulle part dans le dépôt : à refaire si l'application est recréée.
+
+### Ce qu'il ne faut surtout pas faire
+
+Déclarer ces chemins avec l'instruction `VOLUME` du `Dockerfile`. Elle crée un volume
+**anonyme**, c'est-à-dire un volume neuf et vide à chaque conteneur. Vérifié :
+
+```
+run 1 → fichier.txt contient 1 ligne
+run 2 → fichier.txt contient 1 ligne   (et non 2)
+```
+
+Les données seraient donc perdues à chaque redéploiement, et les volumes orphelins
+s'accumuleraient sur le serveur. C'est l'exact inverse de l'effet recherché.
 
 ## 5. Ce que fait le container au démarrage
 
