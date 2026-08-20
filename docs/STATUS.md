@@ -9,12 +9,13 @@ Projet de stage repris par l'école. Le code métier est fonctionnel et bien str
 Excel, écran public `/screen`).
 
 La reprise en main est faite : le projet tourne en Docker en local sur l'image exacte
-qui partira en production, le style est à niveau, **253 tests couvrent le métier** et
-les deux workflows GitHub Actions vérifient réellement quelque chose. Six bugs ont été
-corrigés au passage, dont trois qui auraient bloqué ou dégradé la mise en production.
+qui partira en production, le style est à niveau, **261 tests couvrent le métier** et
+les deux workflows GitHub Actions vérifient réellement quelque chose — ils sont verts
+sur un vrai runner. **Neuf bugs** ont été corrigés au passage, dont quatre qui auraient
+bloqué ou dégradé la mise en production.
 
-Recette locale validée par Thibault le 2026-08-20. Reste à faire : IFO-009, puis le
-déploiement Coolify.
+Recette locale validée par Thibault le 2026-08-20. Tous les chantiers sont clos sauf le
+déploiement Coolify lui-même.
 
 ## Chantiers
 
@@ -79,7 +80,8 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
    les variables d'environnement (**`APP_KEY` généré pour la production, différent du
    local**), monter les volumes `/app/storage/app` et `/app/storage/logs`, brancher le
    domaine. Procédure complète : [`deploiement-coolify.md`](deploiement-coolify.md).
-3. Arbitrer les deux points restants de la section « Points encore ouverts ».
+3. Facultatif : ajouter `chore/**` et `feat/**` aux déclencheurs `push` des
+   workflows, pour obtenir un retour de CI sans devoir ouvrir une PR.
 
 ## Décisions métier rendues
 
