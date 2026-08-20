@@ -17,7 +17,8 @@ class TeacherFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            // unique() : `teachers.name` porte une contrainte d'unicité en base.
+            'name' => fake()->unique()->name(),
         ];
     }
 }

@@ -20,7 +20,8 @@ class RoomFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => 'Room '.fake()->numberBetween(100, 499),
+            // unique() : `rooms.name` porte une contrainte d'unicité en base.
+            'name' => 'Room '.fake()->unique()->numberBetween(100, 9999),
         ];
     }
 }

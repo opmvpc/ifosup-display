@@ -3,10 +3,13 @@
 use App\Models\Assignment;
 use App\Models\Room;
 
-it("change le statut vers cancelled sans vérifier l'occupation du créneau", function () {
+// Ce test mettait deux attributions sur le même créneau pour montrer que
+// `updateStatus` ne contrôle pas l'occupation, contrairement à `store` et `update`.
+// La contrainte `assignments_slot_unique` rend cette mise en scène impossible : la
+// garantie est désormais portée par la base, et couverte par SlotUniquenessTest.
+it('change le statut vers cancelled', function () {
     actingAsUser();
     $room = Room::factory()->create();
-    Assignment::factory()->planned()->forSlot($room, '2026-09-01', 'morning')->create();
     $assignment = Assignment::factory()->planned()->forSlot($room, '2026-09-01', 'morning')->create();
 
     $response = $this->patchJson(route('schedule.assignments.update-status', $assignment), [
