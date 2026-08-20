@@ -33,14 +33,15 @@ phases 1 et 5. Diagnostic d'origine : [`../research/tests-crud-et-ci.md`](../res
 - [x] `composer lint:check` passe (39 fichiers Pint remis en forme au préalable)
 - [x] `pnpm format:check` passe (50 fichiers Prettier)
 - [x] `pnpm lint:check` passe (181 erreurs ESLint, dont 29 corrigées à la main)
-- [~] `pnpm types:check` reporté sous [[IFO-008-typecheck-et-reliquats-2fa]] : il
-      échoue sur les reliquats 2FA, dont la suppression n'a pas été retenue
+- [x] `pnpm types:check` passe et fait partie du workflow — résolu sous
+      [[IFO-008-typecheck-et-reliquats-2fa]] sans supprimer de fichier
 - [x] `lint.yml` utilise `setup-node@v4` en Node 22 et `pnpm install --frozen-lockfile`
 - [x] `tests.yml` déclare explicitement ses extensions PHP et utilise pnpm
 - [x] `permissions` de `lint.yml` ramené à `contents: read`
 - [x] Les commandes des deux workflows passent en local dans le container de dev
       (Pint 130 fichiers PASS, Prettier PASS, ESLint 0 erreur, Pest 253 verts)
-- [ ] Confirmation sur un vrai runner GitHub Actions au premier push
+- [x] Confirmation sur un vrai runner GitHub Actions : les trois jobs passent sur la
+      PR #1 — `quality`, `ci (8.4)` et `ci (8.5)`
 
 ## Journal du ticket
 
@@ -57,3 +58,7 @@ phases 1 et 5. Diagnostic d'origine : [`../research/tests-crud-et-ci.md`](../res
   selon que ces modules sont résolvables ou non — 37 erreurs d'écart entre les deux
   états. `lint.yml` génère donc Wayfinder avant les vérifications front, et le code a
   été figé dans l'état « Wayfinder présent », celui d'un poste de développement normal.
+- 2026-08-20 — validé en conditions réelles. Les workflows n'écoutaient `push` que sur
+  `develop`, `main`, `master` et `workos` : une branche de chantier ne les déclenche pas.
+  C'est l'ouverture de la PR #1 qui a activé le trigger `pull_request`. Résultat :
+  `quality` vert en 59 s, `ci (8.4)` en 38 s, `ci (8.5)` en 1 min 3 s.

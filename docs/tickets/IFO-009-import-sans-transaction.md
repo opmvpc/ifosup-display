@@ -1,7 +1,7 @@
 ---
 id: IFO-009
 titre: L'import de planning purge et réinsère hors transaction
-statut: ouvert
+statut: terminé
 priorité: haute
 dépend-de: []
 créé: 2026-08-20
@@ -34,13 +34,14 @@ annoncé correspond à ce qui est supprimé. Seule l'absence d'atomicité pose p
 
 ## Critères d'acceptation
 
-- [ ] La purge et la boucle de réinsertion sont enveloppées dans un `DB::transaction()`
-- [ ] La suppression du fichier téléversé et le nettoyage de session ont lieu **après**
-      le commit, jamais à l'intérieur de la transaction
-- [ ] Un test provoque un échec au milieu de la réinsertion et vérifie qu'aucune
-      attribution n'a été supprimée
-- [ ] Le message d'erreur renvoyé au front distingue « rien n'a été modifié » d'un
-      échec partiel
+- [x] La purge et la boucle de réinsertion sont enveloppées dans un `DB::transaction()`
+- [x] La suppression du fichier téléversé et le nettoyage de session ont lieu **après**
+      le commit : en cas d'échec, le fichier reste disponible pour retenter
+- [x] Deux tests couvrent le rollback : une attribution de la plage purgée survit à
+      l'échec, et le fichier téléversé est conservé. Vérifié qu'ils échouent tous deux
+      si l'on retire la transaction — sans quoi ils ne prouveraient rien.
+- [x] La réponse 500 indique explicitement que le planning est intact ; l'exception
+      part dans les logs via `report()`
 
 ## Pistes complémentaires (à arbitrer, hors périmètre minimal)
 
@@ -55,3 +56,5 @@ annoncé correspond à ce qui est supprimé. Seule l'absence d'atomicité pose p
   Thibault. La purge était initialement présentée comme un point d'arbitrage métier ;
   la lecture du contrôleur et de `SchedulerImport.vue` montre que la fonctionnalité est
   assumée et bien signalée, et que le vrai défaut est l'absence de transaction.
+- 2026-08-20 — corrigé. `executeImport()` exécute la purge et la réinsertion dans un
+  `DB::transaction()`. Suite complète : 255 tests verts.
