@@ -92,8 +92,30 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
   défaut. Le vrai problème identifié en l'examinant est l'absence de transaction, suivi
   sous [IFO-009](tickets/IFO-009-import-sans-transaction.md).
 
-## Points encore ouverts
+## Points examinés puis écartés
 
-- **Cours mis à jour sans clé `groups`** : les sections sont détachées silencieusement.
-- **`bulkStore`** écrase les attributions existantes là où `store`/`update` refusent
-  en 422 ; une attribution annulée continue de bloquer son créneau.
+Trois comportements signalés comme « surprenants » par les analyses se sont révélés
+assumés une fois confrontés à ce que voit réellement l'utilisateur. Ils restent figés
+par des tests, mais ne sont pas des défauts :
+
+- **`purge_period`** : encadré « danger zone », mention « sans retour en arrière
+  possible », compteur exact des enregistrements supprimés.
+- **`bulkStore` qui remplace** là où `store` refuse : l'écran annonce « N cours
+  existants seront remplacés, cette action est destructive » et le bouton lui-même
+  indique « Insérer (N) et Remplacer (M) ». Les deux comportements répondent à deux
+  intentions distinctes — empêcher l'écrasement accidentel d'un côté, permettre le
+  remplacement voulu de l'autre.
+- **`sync([])` implicite sur les sections d'un cours** : la clé `groups` n'est absente
+  de la requête que lorsque l'utilisateur a décoché toutes les sections — le composant
+  `Combobox` n'émet alors aucun champ. Détacher toutes les sections est donc le
+  comportement attendu. Le cas gênant serait une mise à jour partielle sans `groups` :
+  l'interface n'en produit pas.
+
+Leçon retenue, valable pour la suite : un comportement ne devient un défaut qu'après
+confrontation avec l'interface réelle. Trois signalements sur trois se sont dégonflés.
+
+## Détail mineur non traité
+
+`bulkStore` renvoie `inserted` = nombre de lignes demandées, sans distinguer créations
+et remplacements, ni signaler les suppressions. Sans conséquence : le front affiche son
+propre décompte avant validation.
