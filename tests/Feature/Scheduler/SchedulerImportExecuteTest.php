@@ -184,3 +184,47 @@ it("ne recrée pas une salle déjà existante lors de l'exécution", function ()
 
     expect(Room::where('name', 'Salle 101')->count())->toBe(1);
 });
+
+it("n'applique pas la purge quand la réinsertion échoue", function () {
+    Course::factory()->create(['code' => 'MATH101']);
+    $autreLocal = Room::factory()->create(['name' => 'B999']);
+    $intact = Assignment::factory()->forSlot($autreLocal, '2025-09-10', 'morning')->create();
+
+    uploadDefaultPlanningForExecute();
+
+    Assignment::creating(function (): void {
+        throw new RuntimeException('échec simulé pendant la réinsertion');
+    });
+
+    $response = $this->postJson(route('scheduler.import.execute'), [
+        'selected_rooms' => ['Salle 101'],
+        'selected_courses' => ['MATH101'],
+        'purge_period' => true,
+    ]);
+
+    $response->assertStatus(500);
+    $response->assertJsonPath('error', "L'import a échoué, aucune modification n'a été enregistrée. Le planning est intact.");
+
+    expect(Assignment::whereKey($intact->id)->exists())->toBeTrue()
+        ->and(Assignment::count())->toBe(1);
+});
+
+it("conserve le fichier téléversé quand l'import échoue", function () {
+    Course::factory()->create(['code' => 'MATH101']);
+
+    uploadDefaultPlanningForExecute();
+    $path = session('scheduler_import_pending_file');
+
+    Assignment::creating(function (): void {
+        throw new RuntimeException('échec simulé pendant la réinsertion');
+    });
+
+    $this->postJson(route('scheduler.import.execute'), [
+        'selected_rooms' => ['Salle 101'],
+        'selected_courses' => ['MATH101'],
+        'purge_period' => true,
+    ])->assertStatus(500);
+
+    Storage::assertExists($path);
+    expect(session('scheduler_import_pending_file'))->toBe($path);
+});

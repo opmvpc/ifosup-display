@@ -9,9 +9,11 @@ use App\Services\SchedulerSheetParser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class SchedulerImportController extends Controller
 {
@@ -221,61 +223,77 @@ class SchedulerImportController extends Controller
         $selectedCourses = $request->input('selected_courses');
         $purgePeriod = $request->boolean('purge_period', false);
 
-        // Optionally purge all assignments in the import date range first
-        $purged = 0;
-        if ($purgePeriod) {
-            $allDates = array_column($parsed, 'date');
-            if (! empty($allDates)) {
-                sort($allDates);
-                $purgeDateFrom = $allDates[0];
-                $purgeDateTo = end($allDates);
-                $purged = Assignment::whereBetween('date', [$purgeDateFrom, $purgeDateTo])->delete();
-            }
+        // La purge est définitive (`Assignment` n'a pas de SoftDeletes) : elle doit être
+        // atomique avec la réinsertion, sinon un échec en cours de boucle laisse la
+        // période vidée et l'import à moitié fait, sans récupération possible.
+        try {
+            [$purged, $imported, $replaced] = DB::transaction(function () use ($parsed, $selectedRooms, $selectedCourses, $purgePeriod): array {
+                // Optionally purge all assignments in the import date range first
+                $purged = 0;
+                if ($purgePeriod) {
+                    $allDates = array_column($parsed, 'date');
+                    if (! empty($allDates)) {
+                        sort($allDates);
+                        $purgeDateFrom = $allDates[0];
+                        $purgeDateTo = end($allDates);
+                        $purged = Assignment::whereBetween('date', [$purgeDateFrom, $purgeDateTo])->delete();
+                    }
+                }
+
+                // Create rooms that don't exist yet (only those selected)
+                $rooms = Room::whereIn('name', $selectedRooms)->pluck('id', 'name')->toArray();
+                foreach ($selectedRooms as $roomName) {
+                    if (! isset($rooms[$roomName])) {
+                        $room = Room::create(['name' => $roomName]);
+                        $rooms[$roomName] = $room->id;
+                    }
+                }
+
+                $courses = Course::whereIn('code', $selectedCourses)->pluck('id', 'code');
+
+                $imported = 0;
+                $replaced = 0;
+
+                foreach ($parsed as $entry) {
+                    $roomId = $rooms[$entry['local']] ?? null;
+                    $courseId = $courses[$entry['course']] ?? null;
+
+                    if (! $roomId || ! $courseId) {
+                        continue;
+                    }
+
+                    $existing = Assignment::where('date', $entry['date'])
+                        ->where('period', $entry['period'])
+                        ->where('room_id', $roomId)
+                        ->first();
+
+                    if ($existing) {
+                        $existing->update(['course_id' => $courseId, 'status' => 'planned']);
+                        $replaced++;
+                    } else {
+                        Assignment::create([
+                            'date' => $entry['date'],
+                            'period' => $entry['period'],
+                            'room_id' => $roomId,
+                            'course_id' => $courseId,
+                            'status' => 'planned',
+                        ]);
+                        $imported++;
+                    }
+                }
+
+                return [$purged, $imported, $replaced];
+            });
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'error' => "L'import a échoué, aucune modification n'a été enregistrée. Le planning est intact.",
+            ], 500);
         }
 
-        // Create rooms that don't exist yet (only those selected)
-        $rooms = Room::whereIn('name', $selectedRooms)->pluck('id', 'name')->toArray();
-        foreach ($selectedRooms as $roomName) {
-            if (! isset($rooms[$roomName])) {
-                $room = Room::create(['name' => $roomName]);
-                $rooms[$roomName] = $room->id;
-            }
-        }
-
-        $courses = Course::whereIn('code', $selectedCourses)->pluck('id', 'code');
-
-        $imported = 0;
-        $replaced = 0;
-
-        foreach ($parsed as $entry) {
-            $roomId = $rooms[$entry['local']] ?? null;
-            $courseId = $courses[$entry['course']] ?? null;
-
-            if (! $roomId || ! $courseId) {
-                continue;
-            }
-
-            $existing = Assignment::where('date', $entry['date'])
-                ->where('period', $entry['period'])
-                ->where('room_id', $roomId)
-                ->first();
-
-            if ($existing) {
-                $existing->update(['course_id' => $courseId, 'status' => 'planned']);
-                $replaced++;
-            } else {
-                Assignment::create([
-                    'date' => $entry['date'],
-                    'period' => $entry['period'],
-                    'room_id' => $roomId,
-                    'course_id' => $courseId,
-                    'status' => 'planned',
-                ]);
-                $imported++;
-            }
-        }
-
-        // Clean up uploaded file
+        // Clean up uploaded file — après le commit uniquement : en cas d'échec, le
+        // fichier reste disponible pour retenter l'import.
         Storage::delete($path);
         $request->session()->forget([$this->sessionFileKey(), $this->sessionYearKey()]);
 
