@@ -35,4 +35,21 @@ pnpm approve-builds
 - Configurer la base de données dans le `.env`
 - Lancer : `php artisan key:generate` et `php artisan migrate`
 
+---
+
+### 🐳 Lancer le projet avec Docker (recommandé)
+
+Aucun prérequis hormis Docker Desktop :
+
+```bash
+docker compose up -d --build          # image de production  -> http://localhost:8080
+docker compose -f docker-compose.dev.yml up --build   # dev, hot-reload -> http://localhost:8000
+```
+
+Détails, seeders et dépannage : [`docs/installation-locale.md`](docs/installation-locale.md).
+Mise en ligne : [`docs/deploiement-coolify.md`](docs/deploiement-coolify.md).
+État du projet et chantiers en cours : [`docs/STATUS.md`](docs/STATUS.md).
+
+---
+
 support@ifosup.wavre.be
