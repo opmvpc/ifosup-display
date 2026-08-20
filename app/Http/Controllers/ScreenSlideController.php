@@ -20,7 +20,7 @@ class ScreenSlideController extends Controller
             'slides' => ScreenSlide::query()
                 ->ordered()
                 ->get()
-                ->map(fn(ScreenSlide $slide) => $this->toEditorSlide($slide))
+                ->map(fn (ScreenSlide $slide) => $this->toEditorSlide($slide))
                 ->values(),
         ]);
     }
@@ -35,29 +35,29 @@ class ScreenSlideController extends Controller
             'image' => 'nullable|file|image|max:10240',
             'video' => 'nullable|file|mimetypes:video/mp4,video/webm,video/quicktime|max:307200',
         ], [
-            'type.required'   => 'Le type de slide est requis.',
-            'type.in'         => 'Type de slide invalide.',
+            'type.required' => 'Le type de slide est requis.',
+            'type.in' => 'Type de slide invalide.',
             'duration.integer' => 'La durée doit être un nombre entier.',
-            'duration.min'    => 'La durée minimale est de 1 000 ms.',
-            'duration.max'    => 'La durée maximale est de 120 000 ms.',
-            'image.file'      => 'Le fichier image est invalide.',
-            'image.image'     => 'Le fichier doit être une image (JPG, PNG, GIF, WebP…).',
-            'image.max'       => 'L\'image ne doit pas dépasser 10 Mo.',
-            'video.file'      => 'Le fichier vidéo est invalide.',
+            'duration.min' => 'La durée minimale est de 1 000 ms.',
+            'duration.max' => 'La durée maximale est de 120 000 ms.',
+            'image.file' => 'Le fichier image est invalide.',
+            'image.image' => 'Le fichier doit être une image (JPG, PNG, GIF, WebP…).',
+            'image.max' => 'L\'image ne doit pas dépasser 10 Mo.',
+            'video.file' => 'Le fichier vidéo est invalide.',
             'video.mimetypes' => 'La vidéo doit être au format MP4, WebM ou MOV.',
-            'video.max'       => 'La vidéo ne doit pas dépasser 300 Mo.',
-            'video.uploaded'  => 'Le fichier est trop volumineux pour être envoyé (limite serveur dépassée).',
+            'video.max' => 'La vidéo ne doit pas dépasser 300 Mo.',
+            'video.uploaded' => 'Le fichier est trop volumineux pour être envoyé (limite serveur dépassée).',
         ]);
 
         $type = (string) $validated['type'];
 
-        if ($type === ScreenSlide::TYPE_IMAGE && !$request->hasFile('image')) {
+        if ($type === ScreenSlide::TYPE_IMAGE && ! $request->hasFile('image')) {
             return response()->json([
                 'message' => 'Une image est requise pour un slide image.',
             ], 422);
         }
 
-        if ($type === ScreenSlide::TYPE_VIDEO && !$request->hasFile('video')) {
+        if ($type === ScreenSlide::TYPE_VIDEO && ! $request->hasFile('video')) {
             return response()->json([
                 'message' => 'Une video est requise pour un slide video.',
             ], 422);
@@ -101,12 +101,12 @@ class ScreenSlideController extends Controller
                 'image' => 'nullable|file|image|max:10240',
             ], [
                 'duration.required' => 'La durée est requise pour un slide image.',
-                'duration.integer'  => 'La durée doit être un nombre entier.',
-                'duration.min'      => 'La durée minimale est de 1 000 ms.',
-                'duration.max'      => 'La durée maximale est de 120 000 ms.',
-                'image.file'        => 'Le fichier image est invalide.',
-                'image.image'       => 'Le fichier doit être une image (JPG, PNG, GIF, WebP…).',
-                'image.max'         => 'L\'image ne doit pas dépasser 10 Mo.',
+                'duration.integer' => 'La durée doit être un nombre entier.',
+                'duration.min' => 'La durée minimale est de 1 000 ms.',
+                'duration.max' => 'La durée maximale est de 120 000 ms.',
+                'image.file' => 'Le fichier image est invalide.',
+                'image.image' => 'Le fichier doit être une image (JPG, PNG, GIF, WebP…).',
+                'image.max' => 'L\'image ne doit pas dépasser 10 Mo.',
             ]);
 
             $nextImagePath = $screenSlide->image_path;
@@ -121,7 +121,7 @@ class ScreenSlideController extends Controller
                 $nextImagePath = $newPath;
             }
 
-            if (!$nextImagePath) {
+            if (! $nextImagePath) {
                 return response()->json([
                     'message' => 'Une image est requise pour un slide image.',
                 ], 422);
@@ -142,13 +142,13 @@ class ScreenSlideController extends Controller
                 'duration' => 'nullable|integer|min:1000|max:120000',
                 'video' => 'nullable|file|mimetypes:video/mp4,video/webm,video/quicktime|max:307200',
             ], [
-                'duration.integer'  => 'La durée doit être un nombre entier.',
-                'duration.min'      => 'La durée minimale est de 1 000 ms.',
-                'duration.max'      => 'La durée maximale est de 120 000 ms.',
-                'video.file'        => 'Le fichier vidéo est invalide.',
-                'video.mimetypes'   => 'La vidéo doit être au format MP4, WebM ou MOV.',
-                'video.max'         => 'La vidéo ne doit pas dépasser 300 Mo.',
-                'video.uploaded'    => 'Le fichier est trop volumineux pour être envoyé (limite serveur dépassée).',
+                'duration.integer' => 'La durée doit être un nombre entier.',
+                'duration.min' => 'La durée minimale est de 1 000 ms.',
+                'duration.max' => 'La durée maximale est de 120 000 ms.',
+                'video.file' => 'Le fichier vidéo est invalide.',
+                'video.mimetypes' => 'La vidéo doit être au format MP4, WebM ou MOV.',
+                'video.max' => 'La vidéo ne doit pas dépasser 300 Mo.',
+                'video.uploaded' => 'Le fichier est trop volumineux pour être envoyé (limite serveur dépassée).',
             ]);
 
             $nextVideoPath = $screenSlide->video_path;
@@ -163,7 +163,7 @@ class ScreenSlideController extends Controller
                 $nextVideoPath = $newPath;
             }
 
-            if (!$nextVideoPath) {
+            if (! $nextVideoPath) {
                 return response()->json([
                     'message' => 'Une video est requise pour un slide video.',
                 ], 422);
@@ -194,7 +194,7 @@ class ScreenSlideController extends Controller
         ]);
 
         $orderedIds = collect($validated['slide_ids'])
-            ->map(fn($id) => (int) $id)
+            ->map(fn ($id) => (int) $id)
             ->values();
 
         $slides = ScreenSlide::query()->ordered()->get();
@@ -225,7 +225,7 @@ class ScreenSlideController extends Controller
             'slides' => ScreenSlide::query()
                 ->ordered()
                 ->get()
-                ->map(fn(ScreenSlide $slide) => $this->toEditorSlide($slide))
+                ->map(fn (ScreenSlide $slide) => $this->toEditorSlide($slide))
                 ->values(),
         ]);
     }

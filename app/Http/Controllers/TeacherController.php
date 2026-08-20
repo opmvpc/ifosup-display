@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Teacher;
 use App\Http\Requests\StoreTeacherRequest;
 use App\Http\Requests\UpdateTeacherRequest;
+use App\Models\Teacher;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -17,6 +17,7 @@ class TeacherController extends Controller
     public function index(): Response
     {
         $teachers = Teacher::all();
+
         return Inertia::render('resources/teachers/Index', [
             'teachers' => $teachers,
         ]);

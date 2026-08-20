@@ -20,7 +20,7 @@ class RoomFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => 'Room ' . fake()->numberBetween(100, 499),
+            'name' => 'Room '.fake()->numberBetween(100, 499),
         ];
     }
 }

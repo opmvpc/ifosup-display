@@ -54,7 +54,7 @@ class SchedulerImportController extends Controller
     {
         return Inertia::render('SchedulerImport', [
             'hasPendingFile' => $this->pendingPath($request) !== null,
-            'justUploaded'   => $request->session()->pull('just_uploaded', false),
+            'justUploaded' => $request->session()->pull('just_uploaded', false),
         ]);
     }
 
@@ -63,7 +63,7 @@ class SchedulerImportController extends Controller
     public function upload(Request $request): RedirectResponse
     {
         $request->validate([
-            'file'       => ['required', 'file', 'mimes:xlsx,xls', 'max:20480'],
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:20480'],
             'start_year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
@@ -88,7 +88,7 @@ class SchedulerImportController extends Controller
     {
         $path = $this->pendingPath($request);
 
-        if (!$path) {
+        if (! $path) {
             return response()->json(['error' => 'Aucun fichier en attente.'], 422);
         }
 
@@ -99,32 +99,32 @@ class SchedulerImportController extends Controller
         // Date range
         $allDates = array_column($parsed, 'date');
         sort($allDates);
-        $dateFrom           = !empty($allDates) ? $allDates[0] : null;
-        $dateTo             = !empty($allDates) ? end($allDates) : null;
+        $dateFrom = ! empty($allDates) ? $allDates[0] : null;
+        $dateTo = ! empty($allDates) ? end($allDates) : null;
         $assignmentsInRange = ($dateFrom && $dateTo)
             ? Assignment::whereBetween('date', [$dateFrom, $dateTo])->count()
             : 0;
 
-        $localNames  = array_values(array_unique(array_column($parsed, 'local')));
+        $localNames = array_values(array_unique(array_column($parsed, 'local')));
         $courseCodes = array_values(array_unique(array_column($parsed, 'course')));
 
-        $roomsByName   = Room::whereIn('name', $localNames)->pluck('id', 'name');
-        $coursesInDb   = Course::whereIn('code', $courseCodes)->get(['code', 'name']);
+        $roomsByName = Room::whereIn('name', $localNames)->pluck('id', 'name');
+        $coursesInDb = Course::whereIn('code', $courseCodes)->get(['code', 'name']);
         $coursesByCode = $coursesInDb->pluck('id', 'code');
 
         $existingRooms = array_keys($roomsByName->toArray());
-        $newRooms      = array_values(array_diff($localNames, $existingRooms));
-        $allRooms      = array_merge($existingRooms, $newRooms);
+        $newRooms = array_values(array_diff($localNames, $existingRooms));
+        $allRooms = array_merge($existingRooms, $newRooms);
 
         $knownCourseCodes = $coursesInDb->pluck('code')->all();
-        $knownCourses     = $coursesInDb->map(fn($c) => ['code' => $c->code, 'name' => $c->name])->values()->all();
-        $unknownCourses   = array_values(array_diff($courseCodes, $knownCourseCodes));
+        $knownCourses = $coursesInDb->map(fn ($c) => ['code' => $c->code, 'name' => $c->name])->values()->all();
+        $unknownCourses = array_values(array_diff($courseCodes, $knownCourseCodes));
 
         // Conflicts: date + period + room already occupied in DB (only existing rooms)
         $conflicts = [];
         foreach ($parsed as $entry) {
             $roomId = $roomsByName[$entry['local']] ?? null;
-            if (!$roomId) {
+            if (! $roomId) {
                 continue; // new room → no conflict possible
             }
 
@@ -136,10 +136,10 @@ class SchedulerImportController extends Controller
 
             if ($existing && $existing->course?->code !== $entry['course']) {
                 $conflicts[] = [
-                    'date'           => $entry['date'],
-                    'period'         => $entry['period'],
-                    'local'          => $entry['local'],
-                    'course_new'     => $entry['course'],
+                    'date' => $entry['date'],
+                    'period' => $entry['period'],
+                    'local' => $entry['local'],
+                    'course_new' => $entry['course'],
                     'course_current' => $existing->course?->code,
                 ];
             }
@@ -148,26 +148,26 @@ class SchedulerImportController extends Controller
         // Build a quick lookup of conflict slots: "date|period|local" => true
         $conflictSlotKeys = [];
         foreach ($conflicts as $c) {
-            $conflictSlotKeys[$c['date'] . '|' . $c['period'] . '|' . $c['local']] = true;
+            $conflictSlotKeys[$c['date'].'|'.$c['period'].'|'.$c['local']] = true;
         }
 
         // Breakdown: per (any_room × any_course) pair — frontend filters by selection
         $breakdownMap = [];
         foreach ($parsed as $entry) {
-            if (!in_array($entry['local'], $allRooms)) {
+            if (! in_array($entry['local'], $allRooms)) {
                 continue;
             }
-            $key = $entry['local'] . '|||' . $entry['course'];
-            if (!isset($breakdownMap[$key])) {
+            $key = $entry['local'].'|||'.$entry['course'];
+            if (! isset($breakdownMap[$key])) {
                 $breakdownMap[$key] = [
-                    'room'           => $entry['local'],
-                    'course'         => $entry['course'],
-                    'count'          => 0,
+                    'room' => $entry['local'],
+                    'course' => $entry['course'],
+                    'count' => 0,
                     'conflict_count' => 0,
                 ];
             }
             $breakdownMap[$key]['count']++;
-            if (isset($conflictSlotKeys[$entry['date'] . '|' . $entry['period'] . '|' . $entry['local']])) {
+            if (isset($conflictSlotKeys[$entry['date'].'|'.$entry['period'].'|'.$entry['local']])) {
                 $breakdownMap[$key]['conflict_count']++;
             }
         }
@@ -175,23 +175,23 @@ class SchedulerImportController extends Controller
         $breakdown = array_values($breakdownMap);
 
         // Raw counts per room / course directly from parsed data (not filtered by known courses)
-        $roomCounts   = array_count_values(array_column($parsed, 'local'));
+        $roomCounts = array_count_values(array_column($parsed, 'local'));
         $courseCounts = array_count_values(array_column($parsed, 'course'));
 
         return response()->json([
-            'total'                => count($parsed),
-            'start_year'           => $startYear,
-            'date_from'            => $dateFrom,
-            'date_to'              => $dateTo,
+            'total' => count($parsed),
+            'start_year' => $startYear,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
             'assignments_in_range' => $assignmentsInRange,
-            'existing_rooms'  => $existingRooms,
-            'new_rooms'       => $newRooms,
-            'known_courses'   => $knownCourses,
+            'existing_rooms' => $existingRooms,
+            'new_rooms' => $newRooms,
+            'known_courses' => $knownCourses,
             'unknown_courses' => $unknownCourses,
-            'conflicts'       => $conflicts,
-            'breakdown'       => $breakdown,
-            'room_counts'     => $roomCounts,
-            'course_counts'   => $courseCounts,
+            'conflicts' => $conflicts,
+            'breakdown' => $breakdown,
+            'room_counts' => $roomCounts,
+            'course_counts' => $courseCounts,
         ]);
     }
 
@@ -200,43 +200,43 @@ class SchedulerImportController extends Controller
     public function executeImport(Request $request): JsonResponse
     {
         $request->validate([
-            'selected_rooms'     => ['required', 'array'],
-            'selected_rooms.*'   => ['string'],
-            'selected_courses'   => ['required', 'array'],
+            'selected_rooms' => ['required', 'array'],
+            'selected_rooms.*' => ['string'],
+            'selected_courses' => ['required', 'array'],
             'selected_courses.*' => ['string'],
-            'purge_period'       => ['boolean'],
+            'purge_period' => ['boolean'],
         ]);
 
         $path = $this->pendingPath($request);
 
-        if (!$path) {
+        if (! $path) {
             return response()->json(['error' => 'Aucun fichier en attente.'], 422);
         }
 
-        $startYear    = $request->session()->get($this->sessionYearKey(), (int) now()->year);
+        $startYear = $request->session()->get($this->sessionYearKey(), (int) now()->year);
         $absolutePath = Storage::path($path);
-        $parsed       = $this->parser->parse($absolutePath, $startYear);
+        $parsed = $this->parser->parse($absolutePath, $startYear);
 
-        $selectedRooms   = $request->input('selected_rooms');
+        $selectedRooms = $request->input('selected_rooms');
         $selectedCourses = $request->input('selected_courses');
-        $purgePeriod     = $request->boolean('purge_period', false);
+        $purgePeriod = $request->boolean('purge_period', false);
 
         // Optionally purge all assignments in the import date range first
         $purged = 0;
         if ($purgePeriod) {
             $allDates = array_column($parsed, 'date');
-            if (!empty($allDates)) {
+            if (! empty($allDates)) {
                 sort($allDates);
                 $purgeDateFrom = $allDates[0];
-                $purgeDateTo   = end($allDates);
-                $purged        = Assignment::whereBetween('date', [$purgeDateFrom, $purgeDateTo])->delete();
+                $purgeDateTo = end($allDates);
+                $purged = Assignment::whereBetween('date', [$purgeDateFrom, $purgeDateTo])->delete();
             }
         }
 
         // Create rooms that don't exist yet (only those selected)
         $rooms = Room::whereIn('name', $selectedRooms)->pluck('id', 'name')->toArray();
         foreach ($selectedRooms as $roomName) {
-            if (!isset($rooms[$roomName])) {
+            if (! isset($rooms[$roomName])) {
                 $room = Room::create(['name' => $roomName]);
                 $rooms[$roomName] = $room->id;
             }
@@ -248,10 +248,10 @@ class SchedulerImportController extends Controller
         $replaced = 0;
 
         foreach ($parsed as $entry) {
-            $roomId   = $rooms[$entry['local']]   ?? null;
+            $roomId = $rooms[$entry['local']] ?? null;
             $courseId = $courses[$entry['course']] ?? null;
 
-            if (!$roomId || !$courseId) {
+            if (! $roomId || ! $courseId) {
                 continue;
             }
 
@@ -265,11 +265,11 @@ class SchedulerImportController extends Controller
                 $replaced++;
             } else {
                 Assignment::create([
-                    'date'      => $entry['date'],
-                    'period'    => $entry['period'],
-                    'room_id'   => $roomId,
+                    'date' => $entry['date'],
+                    'period' => $entry['period'],
+                    'room_id' => $roomId,
                     'course_id' => $courseId,
-                    'status'    => 'planned',
+                    'status' => 'planned',
                 ]);
                 $imported++;
             }
@@ -282,7 +282,7 @@ class SchedulerImportController extends Controller
         return response()->json([
             'imported' => $imported,
             'replaced' => $replaced,
-            'purged'   => $purged,
+            'purged' => $purged,
         ]);
     }
 

@@ -17,6 +17,7 @@ class CourseController extends Controller
     public function index()
     {
         $courses = Course::orderBy('code')->get();
+
         return Inertia::render('resources/courses/Index', [
             'courses' => $courses,
         ]);
@@ -32,7 +33,7 @@ class CourseController extends Controller
 
         return Inertia::render('resources/courses/Create', [
             'teachers' => $teachers,
-            'groups' => $groups
+            'groups' => $groups,
         ]);
     }
 
@@ -81,7 +82,7 @@ class CourseController extends Controller
         return Inertia::render('resources/courses/Edit', [
             'course' => $course,
             'teachers' => $teachers,
-            'groups' => $groups
+            'groups' => $groups,
         ]);
     }
 

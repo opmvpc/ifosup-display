@@ -49,7 +49,7 @@ class CourseFactory extends Factory
         $level = fake()->randomElement([2, 4, 5]); // 2=inférieur, 4=supérieur, 5=université
         $letters = strtoupper(fake()->lexify('????'));
         $suffix = fake()->numberBetween(1, 3);
-        $code = $level . $letters . '-' . $suffix;
+        $code = $level.$letters.'-'.$suffix;
 
         $name = fake()->randomElement(self::$courseNames);
         if ($level === 2) {

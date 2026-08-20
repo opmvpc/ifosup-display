@@ -22,7 +22,7 @@ class AssignmentSeeder extends Seeder
         }
 
         Assignment::factory(100)
-            ->state(fn(): array => [
+            ->state(fn (): array => [
                 'course_id' => $courseIds->random(),
                 'room_id' => $roomIds->isNotEmpty() && fake()->boolean(90) ? $roomIds->random() : null,
             ])
