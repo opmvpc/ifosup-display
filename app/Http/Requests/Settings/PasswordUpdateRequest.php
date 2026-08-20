@@ -22,4 +22,19 @@ class PasswordUpdateRequest extends FormRequest
             'password' => $this->passwordRules(),
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'current_password.required' => 'Le mot de passe actuel est requis.',
+            'current_password.current_password' => "Le mot de passe actuel saisi n'est pas correct.",
+            'password.required' => 'Le nouveau mot de passe est requis.',
+            'password.confirmed' => 'La confirmation du nouveau mot de passe ne correspond pas.',
+        ];
+    }
 }

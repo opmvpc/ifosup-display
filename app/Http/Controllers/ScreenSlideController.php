@@ -84,6 +84,9 @@ class ScreenSlideController extends Controller
         if ($screenSlide->type === ScreenSlide::TYPE_WELCOME) {
             $validated = $request->validate([
                 'motd' => 'nullable|string|max:280',
+            ], [
+                'motd.string' => 'Le message d\'accueil doit être une chaîne de caractères.',
+                'motd.max' => 'Le message d\'accueil ne peut pas dépasser 280 caractères.',
             ]);
 
             $screenSlide->update([
@@ -191,6 +194,12 @@ class ScreenSlideController extends Controller
         $validated = $request->validate([
             'slide_ids' => 'required|array|min:1',
             'slide_ids.*' => 'integer|exists:screen_slides,id',
+        ], [
+            'slide_ids.required' => 'La liste des slides à réordonner est requise.',
+            'slide_ids.array' => "La liste des slides doit être un tableau d'identifiants.",
+            'slide_ids.min' => 'La liste des slides ne peut pas être vide.',
+            'slide_ids.*.integer' => 'Chaque identifiant de slide doit être un entier.',
+            'slide_ids.*.exists' => 'Chaque slide doit correspondre à un slide existant.',
         ]);
 
         $orderedIds = collect($validated['slide_ids'])

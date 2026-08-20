@@ -17,4 +17,17 @@ class UpdateScheduleAssignmentStatusRequest extends FormRequest
             'status' => 'required|in:planned,cancelled,late',
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'status.required' => 'Le statut est requis.',
+            'status.in' => 'Le statut doit être planifié, annulé ou en retard.',
+        ];
+    }
 }

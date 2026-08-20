@@ -18,4 +18,17 @@ class ScheduleIndexRequest extends FormRequest
             'to' => 'nullable|date_format:Y-m-d',
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'from.date_format' => 'La date de début doit être au format AAAA-MM-JJ.',
+            'to.date_format' => 'La date de fin doit être au format AAAA-MM-JJ.',
+        ];
+    }
 }

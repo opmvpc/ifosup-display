@@ -19,4 +19,21 @@ class ProfileUpdateRequest extends FormRequest
     {
         return $this->profileRules($this->user()->id);
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Le nom est requis.',
+            'name.max' => 'Le nom ne peut pas dépasser 255 caractères.',
+            'email.required' => "L'adresse e-mail est requise.",
+            'email.email' => "L'adresse e-mail n'est pas valide.",
+            'email.max' => "L'adresse e-mail ne peut pas dépasser 255 caractères.",
+            'email.unique' => 'Cette adresse e-mail est déjà utilisée.',
+        ];
+    }
 }
