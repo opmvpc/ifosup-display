@@ -67,7 +67,7 @@ it('gère correctement une plage à cheval sur deux années civiles', function (
     expect($dates)->toHaveCount(3);
 });
 
-it("n'échoue pas la validation quand end_week est antérieure à start_week (la règle gte compare la longueur des chaînes, pas leur ordre) et retourne une liste de dates vide", function () {
+it('refuse une plage inversée (end_week antérieure à start_week) avec un message explicite', function () {
     actingAsUser();
     $course = Course::factory()->create();
     $room = Room::factory()->create();
@@ -81,9 +81,27 @@ it("n'échoue pas la validation quand end_week est antérieure à start_week (la
         'end_week' => '2026-W05',
     ]);
 
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('end_week');
+    expect($response->json('errors.end_week.0'))
+        ->toBe('La semaine de fin doit être postérieure ou égale à la semaine de début.');
+});
+
+it('accepte une plage où end_week est égale à start_week', function () {
+    actingAsUser();
+    $course = Course::factory()->create();
+    $room = Room::factory()->create();
+
+    $response = $this->postJson(route('schedule.assignments.bulk.preview'), [
+        'course_id' => $course->id,
+        'room_id' => $room->id,
+        'day_of_week' => 1,
+        'period' => 'morning',
+        'start_week' => '2026-W10',
+        'end_week' => '2026-W10',
+    ]);
+
     $response->assertOk();
-    expect($response->json('dates'))->toBe([]);
-    expect($response->json('existing'))->toBe([]);
 });
 
 it('refuse un day_of_week hors de 1 à 7', function () {

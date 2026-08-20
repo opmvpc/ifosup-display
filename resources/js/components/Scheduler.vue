@@ -511,13 +511,33 @@ const getCsrfToken = () => {
     return decodeURIComponent(xsrfCookie.split('=').slice(1).join('='));
 };
 
+const extractErrorMessage = (payload: unknown, fallback: string): string => {
+    if (payload && typeof payload === 'object') {
+        const body = payload as {
+            errors?: Record<string, string[] | string>;
+            error?: string;
+            message?: string;
+        };
+
+        if (body.errors && typeof body.errors === 'object') {
+            const messages = Object.values(body.errors).flat();
+            if (messages.length > 0) return messages.join(' ');
+        }
+
+        if (typeof body.error === 'string') return body.error;
+        if (typeof body.message === 'string') return body.message;
+    }
+
+    return fallback;
+};
+
 const parseResponseError = async (
     response: Response,
     fallbackMessage: string,
 ) => {
     try {
-        const payload = (await response.json()) as { message?: string };
-        return payload.message ?? fallbackMessage;
+        const payload = await response.json();
+        return extractErrorMessage(payload, fallbackMessage);
     } catch {
         return fallbackMessage;
     }
@@ -1156,10 +1176,8 @@ const submitStep1 = async () => {
             }),
         });
         if (!res.ok) {
-            const json = (await res.json().catch(() => ({}))) as {
-                message?: string;
-            };
-            throw new Error(json?.message ?? `Erreur ${res.status}`);
+            const json = await res.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(json, `Erreur ${res.status}`));
         }
         const payload = (await res.json()) as {
             dates: string[];
@@ -1207,10 +1225,8 @@ const submitBulk = async () => {
             }),
         });
         if (!res.ok) {
-            const json = (await res.json().catch(() => ({}))) as {
-                message?: string;
-            };
-            throw new Error(json?.message ?? `Erreur ${res.status}`);
+            const json = await res.json().catch(() => ({}));
+            throw new Error(extractErrorMessage(json, `Erreur ${res.status}`));
         }
         isBulkDialogOpen.value = false;
         router.reload({ only: ['assignments'] });

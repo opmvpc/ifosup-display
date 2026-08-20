@@ -141,7 +141,20 @@ class ScheduleController extends Controller
             'day_of_week' => ['required', 'integer', 'min:1', 'max:7'],
             'period' => ['required', 'in:morning,afternoon,evening'],
             'start_week' => ['required', 'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/'],
-            'end_week' => ['required', 'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/', 'gte:start_week'],
+            'end_week' => [
+                'required',
+                'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                    $startWeek = $request->input('start_week');
+
+                    // Une fois le format YYYY-Www garanti par la regex ci-dessus, la comparaison
+                    // lexicographique correspond à l'ordre chronologique (contrairement à `gte`,
+                    // qui compare la longueur des chaînes et ne rejette donc jamais rien ici).
+                    if (is_string($startWeek) && $value < $startWeek) {
+                        $fail('La semaine de fin doit être postérieure ou égale à la semaine de début.');
+                    }
+                },
+            ],
         ]);
 
         $rangeStart = $this->isoWeekToMonday($data['start_week']);

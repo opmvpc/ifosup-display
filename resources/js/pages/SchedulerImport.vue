@@ -147,6 +147,26 @@ function getCsrfToken(): string {
     return match ? decodeURIComponent(match[1]) : '';
 }
 
+function extractErrorMessage(json: unknown, fallback: string): string {
+    if (json && typeof json === 'object') {
+        const payload = json as {
+            errors?: Record<string, string[] | string>;
+            error?: string;
+            message?: string;
+        };
+
+        if (payload.errors && typeof payload.errors === 'object') {
+            const messages = Object.values(payload.errors).flat();
+            if (messages.length > 0) return messages.join(' ');
+        }
+
+        if (typeof payload.error === 'string') return payload.error;
+        if (typeof payload.message === 'string') return payload.message;
+    }
+
+    return fallback;
+}
+
 async function apiPost<T>(
     url: string,
     body: Record<string, unknown>,
@@ -161,7 +181,8 @@ async function apiPost<T>(
         body: JSON.stringify(body),
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error ?? 'Une erreur est survenue.');
+    if (!res.ok)
+        throw new Error(extractErrorMessage(json, 'Une erreur est survenue.'));
     return json as T;
 }
 

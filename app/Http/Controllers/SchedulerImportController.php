@@ -67,6 +67,15 @@ class SchedulerImportController extends Controller
         $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:20480'],
             'start_year' => ['required', 'integer', 'min:2000', 'max:2100'],
+        ], [
+            'file.required' => 'Le fichier est requis.',
+            'file.file' => 'Le fichier envoyé est invalide.',
+            'file.mimes' => 'Le fichier doit être au format Excel (.xlsx ou .xls).',
+            'file.max' => 'Le fichier ne doit pas dépasser 20 Mo.',
+            'start_year.required' => "L'année de départ est requise.",
+            'start_year.integer' => "L'année de départ doit être un nombre entier.",
+            'start_year.min' => "L'année de départ doit être supérieure ou égale à 2000.",
+            'start_year.max' => "L'année de départ doit être inférieure ou égale à 2100.",
         ]);
 
         // Delete any previous pending file for this session
@@ -207,6 +216,14 @@ class SchedulerImportController extends Controller
             'selected_courses' => ['required', 'array'],
             'selected_courses.*' => ['string'],
             'purge_period' => ['boolean'],
+        ], [
+            'selected_rooms.required' => 'Les locaux sélectionnés sont requis.',
+            'selected_rooms.array' => 'Les locaux sélectionnés doivent être un tableau.',
+            'selected_rooms.*.string' => 'Chaque local sélectionné doit être une chaîne de caractères.',
+            'selected_courses.required' => 'Les cours sélectionnés sont requis.',
+            'selected_courses.array' => 'Les cours sélectionnés doivent être un tableau.',
+            'selected_courses.*.string' => 'Chaque cours sélectionné doit être une chaîne de caractères.',
+            'purge_period.boolean' => 'La purge de la période doit être vraie ou fausse.',
         ]);
 
         $path = $this->pendingPath($request);
