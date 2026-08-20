@@ -20,9 +20,14 @@ import {
 } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
-import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
-import { confirm } from '@/routes/two-factor';
+import {
+    twoFactorRoutes,
+    useTwoFactorAuth,
+} from '@/composables/useTwoFactorAuth';
+
 import type { TwoFactorConfigContent } from '@/types';
+
+const { confirm } = twoFactorRoutes;
 
 type Props = {
     requiresConfirmation: boolean;

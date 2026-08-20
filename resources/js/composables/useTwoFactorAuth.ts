@@ -1,6 +1,37 @@
 import type { ComputedRef, Ref } from 'vue';
 import { computed, ref } from 'vue';
-import { qrCode, recoveryCodes, secretKey } from '@/routes/two-factor';
+
+/**
+ * Endpoints Fortify de la double authentification.
+ *
+ * Ils sont déclarés en dur plutôt qu'importés de `@/routes/two-factor` : ce module
+ * est généré par Wayfinder à partir des routes existantes, or la fonctionnalité est
+ * désactivée (`'features' => []` dans `config/fortify.php`, aucun serveur mail).
+ * Le module n'est donc pas généré et l'import cassait `vue-tsc`.
+ *
+ * Ces chemins sont ceux que Fortify enregistre : réactiver la fonctionnalité suffit
+ * à les rendre fonctionnels, sans rien changer ici.
+ */
+type FormAction = { action: string; method: 'post' };
+
+const postForm = (action: string): FormAction => ({ action, method: 'post' });
+
+export const twoFactorRoutes = {
+    qrCode: { url: (): string => '/user/two-factor-qr-code' },
+    secretKey: { url: (): string => '/user/two-factor-secret-key' },
+    recoveryCodes: { url: (): string => '/user/two-factor-recovery-codes' },
+    regenerateRecoveryCodes: {
+        url: (): string => '/user/two-factor-recovery-codes',
+        form: (): FormAction => postForm('/user/two-factor-recovery-codes'),
+    },
+    confirm: {
+        url: (): string => '/user/confirmed-two-factor-authentication',
+        form: (): FormAction =>
+            postForm('/user/confirmed-two-factor-authentication'),
+    },
+} as const;
+
+const { qrCode, recoveryCodes, secretKey } = twoFactorRoutes;
 
 export type UseTwoFactorAuthReturn = {
     qrCodeSvg: Ref<string | null>;
