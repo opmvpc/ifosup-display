@@ -28,7 +28,9 @@ déploiement Coolify.
 | [IFO-006](tickets/IFO-006-ordre-migrations.md) | Ordre des migrations cassé sur MySQL | terminé |
 | [IFO-007](tickets/IFO-007-ci-au-vert.md) | CI GitHub Actions au vert | terminé |
 | [IFO-008](tickets/IFO-008-typecheck-et-reliquats-2fa.md) | `types:check` en CI | terminé |
-| [IFO-009](tickets/IFO-009-import-sans-transaction.md) | Import de planning hors transaction | **ouvert** |
+| [IFO-009](tickets/IFO-009-import-sans-transaction.md) | Import de planning hors transaction | terminé |
+| [IFO-010](tickets/IFO-010-contraintes-unicite.md) | Contraintes d'unicité manquantes en base | terminé |
+| [IFO-011](tickets/IFO-011-messages-de-validation.md) | Messages de validation et erreurs 422 | terminé |
 
 ## Décisions
 
@@ -45,6 +47,12 @@ déploiement Coolify.
 | Phase 3 (B3) | Les hooks de `ScreenSlide` supprimaient les médias sur le disque `local` alors qu'ils sont stockés sur `public` | Fichiers orphelins accumulés indéfiniment |
 | Phase 3 (bonus) | `FortifyServiceProvider` n'enregistrait que `loginView` : la route `password.confirm` terminait en 500 alors que la page Inertia existait | Erreur serveur sur la confirmation de mot de passe |
 | 2026-08-20 | Le healthcheck hérité de l'image FrankenPHP interrogeait l'API d'admin de Caddy, désactivée par le `Caddyfile` (`admin off`) : le container était toujours `unhealthy` | Coolify aurait pu marquer les déploiements en échec ou redémarrer le container en boucle |
+| IFO-009 | L'import purgeait puis réinsérait hors transaction, sans `SoftDeletes` | Perte de données irrécupérable si l'import échouait à mi-parcours |
+| IFO-010 | Aucune unicité sur les noms de locaux : `pluck('id','name')` en retenait un au hasard | L'import Excel pouvait rattacher un planning au mauvais local |
+| IFO-010 | Aucune unicité sur le créneau (date, période, local) | Deux écritures concurrentes plaçaient deux cours dans le même local, affichés tous deux sur les TV |
+| IFO-011 | Aucun fichier de langue malgré `APP_LOCALE=fr` | Une douzaine de formulaires affichaient `validation.required` à l'écran |
+| IFO-011 | Les appels hors Inertia jetaient le détail des erreurs 422 | L'utilisateur voyait « Une erreur est survenue. » sans savoir quoi corriger |
+| IFO-011 | `gte:start_week` comparait la longueur des chaînes, jamais les dates | Une plage de semaines inversée était acceptée en silence |
 
 `bulkPreview` a par ailleurs été restreint au local demandé : ce n'était pas un bug
 fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
@@ -53,27 +61,25 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 
 | Vérification | Résultat |
 |---|---|
-| `php artisan test` | 253 passés, 7 ignorés (2FA), 0 échec — 1033 assertions |
-| `composer lint:check` | PASS, 130 fichiers |
+| `php artisan test` | **261 passés**, 7 ignorés (2FA), 0 échec — 1047 assertions |
+| `composer lint:check` | PASS, 143 fichiers |
 | `pnpm format:check` | PASS |
 | `pnpm lint:check` | 0 erreur |
 | `pnpm types:check` | 0 erreur, et vérifié par la CI |
+| CI GitHub Actions | **verte** sur la PR #1 — `quality`, `ci (8.4)`, `ci (8.5)` |
+| Migrations sur MySQL avec doublons réels | Dédoublonnage vérifié : le local « 106 » a conservé ses 18 attributions |
 | Stack Docker locale | `/`, `/screen`, `/screen/data`, `/login` en 200 ; connexion admin OK ; CRUD vérifié en base |
 | Healthcheck du container | `healthy` (il échouait en permanence avant correction) |
 | Recette de l'écran public | Bonne période affichée, date en français, horloge, statut « ANNULÉ » rendu |
 
 ## Prochaine action
 
-1. Traiter [IFO-009](tickets/IFO-009-import-sans-transaction.md) : envelopper la purge
-   et la réinsertion de l'import dans une transaction. Risque de perte de données
-   irrécupérable si un import échoue à mi-parcours.
-2. Vérifier que les deux workflows sont verts sur la branche poussée
-   `chore/reprise-et-mise-a-niveau`, puis fusionner.
-3. Ouvrir IFO-002 : créer l'application et le service MySQL 8.4 sur Coolify, renseigner
+1. Relire et fusionner la [PR #1](https://github.com/opmvpc/ifosup-display/pull/1).
+2. Ouvrir IFO-002 : créer l'application et le service MySQL 8.4 sur Coolify, renseigner
    les variables d'environnement (**`APP_KEY` généré pour la production, différent du
    local**), monter les volumes `/app/storage/app` et `/app/storage/logs`, brancher le
    domaine. Procédure complète : [`deploiement-coolify.md`](deploiement-coolify.md).
-4. Arbitrer les deux points restants de la section « Points encore ouverts ».
+3. Arbitrer les deux points restants de la section « Points encore ouverts ».
 
 ## Décisions métier rendues
 
