@@ -13,7 +13,8 @@ qui partira en production, le style est à niveau, **253 tests couvrent le méti
 les deux workflows GitHub Actions vérifient réellement quelque chose. Six bugs ont été
 corrigés au passage, dont trois qui auraient bloqué ou dégradé la mise en production.
 
-Reste à faire : la recette du backoffice à la main, puis le déploiement Coolify.
+Recette locale validée par Thibault le 2026-08-20. Reste à faire : IFO-009, puis le
+déploiement Coolify.
 
 ## Chantiers
 
@@ -27,6 +28,7 @@ Reste à faire : la recette du backoffice à la main, puis le déploiement Cooli
 | [IFO-006](tickets/IFO-006-ordre-migrations.md) | Ordre des migrations cassé sur MySQL | terminé |
 | [IFO-007](tickets/IFO-007-ci-au-vert.md) | CI GitHub Actions au vert | terminé |
 | [IFO-008](tickets/IFO-008-typecheck-et-reliquats-2fa.md) | `types:check` en CI | terminé |
+| [IFO-009](tickets/IFO-009-import-sans-transaction.md) | Import de planning hors transaction | **ouvert** |
 
 ## Décisions
 
@@ -62,27 +64,30 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 
 ## Prochaine action
 
-1. **Recette du backoffice, par toi** : se connecter sur <http://localhost:8080>
-   (`admin@ifosup.wavre.be`), vérifier le planning et son glisser-déposer, les CRUD,
-   la gestion des slides, et surtout **l'import d'un vrai fichier Excel de l'école** —
-   c'est la partie la plus difficile à valider autrement qu'à la main. Les données de
-   démonstration sont déjà en base.
-2. Découper et livrer les commits (style / corrections / tests / infra), puis pousser :
-   le push valide les deux workflows sur un vrai runner GitHub Actions.
+1. Traiter [IFO-009](tickets/IFO-009-import-sans-transaction.md) : envelopper la purge
+   et la réinsertion de l'import dans une transaction. Risque de perte de données
+   irrécupérable si un import échoue à mi-parcours.
+2. Vérifier que les deux workflows sont verts sur la branche poussée
+   `chore/reprise-et-mise-a-niveau`, puis fusionner.
 3. Ouvrir IFO-002 : créer l'application et le service MySQL 8.4 sur Coolify, renseigner
    les variables d'environnement (**`APP_KEY` généré pour la production, différent du
    local**), monter les volumes `/app/storage/app` et `/app/storage/logs`, brancher le
    domaine. Procédure complète : [`deploiement-coolify.md`](deploiement-coolify.md).
-4. Arbitrer les deux points métier ci-dessous avec l'école.
+4. Arbitrer les deux points restants de la section « Points encore ouverts ».
 
-## Points laissés à l'arbitrage de l'école
+## Décisions métier rendues
 
-- **Aucune notion de rôle** : `/admin/users` n'est protégé que par `auth` + `verified`,
-  comme le reste. Tout utilisateur connecté peut créer et supprimer des comptes. Le
-  comportement actuel est figé par un test, mais ce n'est pas une décision technique.
-- **`purge_period`** à l'import supprime toutes les attributions de la plage de dates,
-  y compris celles des locaux et cours non sélectionnés. Figé par un test le 2026-08-18,
-  à confirmer avec le métier.
+- **Pas de gestion de rôles** (2026-08-20) : tout utilisateur connecté peut gérer les
+  comptes via `/admin/users`. Arbitré par l'école, le comportement actuel est conservé
+  et figé par un test. À rouvrir seulement si le nombre de comptes augmente.
+- **`purge_period`** (2026-08-20) : la purge de toute la plage de dates est délibérée et
+  correctement signalée dans l'interface (encadré « danger zone », mention « sans retour
+  en arrière possible », compteur exact des enregistrements concernés). Ce n'était pas un
+  défaut. Le vrai problème identifié en l'examinant est l'absence de transaction, suivi
+  sous [IFO-009](tickets/IFO-009-import-sans-transaction.md).
+
+## Points encore ouverts
+
 - **Cours mis à jour sans clé `groups`** : les sections sont détachées silencieusement.
 - **`bulkStore`** écrase les attributions existantes là où `store`/`update` refusent
   en 422 ; une attribution annulée continue de bloquer son créneau.
