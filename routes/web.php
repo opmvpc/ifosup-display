@@ -6,7 +6,6 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SchedulerImportController;
-use App\Http\Controllers\SchedulerParserController;
 use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\ScreenSlideController;
 use App\Http\Controllers\TeacherController;
@@ -48,7 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::prefix('scheduler/import')->name('scheduler.import')->group(function () {
-        Route::get('/',        [SchedulerImportController::class, 'index'])->name('');
+        Route::get('/', [SchedulerImportController::class, 'index'])->name('');
         Route::post('/upload', [SchedulerImportController::class, 'upload'])->name('.upload');
         Route::post('/preview', [SchedulerImportController::class, 'preview'])->name('.preview');
         Route::post('/execute', [SchedulerImportController::class, 'executeImport'])->name('.execute');
@@ -56,6 +55,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::get('/debug-excel', [SchedulerParserController::class, 'debug']);
-
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
