@@ -29,16 +29,24 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          # phpunit.xml force sqlite en mémoire ; phpspreadsheet utilise gd et zip.
+          extensions: pdo_sqlite, sqlite3, mbstring, gd, zip
           tools: composer:v2
-          coverage: xdebug
+          coverage: none
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
 
       - name: Install Node Dependencies
-        run: npm i
+        run: pnpm install --frozen-lockfile
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -49,8 +57,11 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
+      # Les tests PHP n'en dépendent plus (`withoutVite()` dans Tests\TestCase),
+      # mais cette étape vérifie que le build front — celui que Coolify exécute —
+      # passe toujours, et génère les fichiers Wayfinder.
       - name: Build Assets
-        run: npm run build
+        run: pnpm build
 
       - name: Tests
         run: ./vendor/bin/pest

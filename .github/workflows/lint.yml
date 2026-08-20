@@ -15,7 +15,7 @@ on:
       - workos
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -27,23 +27,52 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: pdo_sqlite, sqlite3, mbstring, gd, zip
+          tools: composer:v2
+          coverage: none
 
-      - name: Install Dependencies
-        run: |
-          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm install
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-      - name: Run Pint
-        run: composer lint
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
 
-      - name: Format Frontend
-        run: npm run format
+      # Sans `--no-scripts` : les étapes suivantes appellent artisan, qui a besoin
+      # du manifest de packages produit par `package:discover`.
+      - name: Install PHP Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-progress --prefer-dist
+
+      - name: Install Node Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      # Indispensable AVANT ESLint : `resources/js/{actions,routes}` est gitignoré,
+      # et la règle `import/order` classe les imports `@/actions` / `@/routes`
+      # différemment selon que ces modules sont résolvables ou non. Sans cette
+      # étape, le lint de la CI diverge de celui d'un poste de développement.
+      - name: Generate Wayfinder Routes
+        run: php artisan wayfinder:generate --with-form
+
+      # Variantes « check » : elles échouent sur du code non conforme, là où
+      # `pint`/`prettier --write` réécrivaient les fichiers et passaient toujours.
+      - name: Check PHP Code Style
+        run: composer lint:check
+
+      - name: Check Frontend Formatting
+        run: pnpm format:check
 
       - name: Lint Frontend
-        run: npm run lint
+        run: pnpm lint:check
 
-      # - name: Commit Changes
-      #   uses: stefanzweifel/git-auto-commit-action@v7
-      #   with:
-      #     commit_message: fix code style
-      #     commit_options: '--no-verify'
+      - name: Check Types
+        run: pnpm types:check

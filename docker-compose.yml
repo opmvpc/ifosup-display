@@ -1,0 +1,43 @@
+# Stack "prod-like" : on construit exactement l'image qui partira sur Coolify.
+# Usage : docker compose up -d --build   ->  http://localhost:8080
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ifosup-display:local
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    ports:
+      - "8080:80"
+    volumes:
+      - app-storage:/app/storage/app
+      - app-logs:/app/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ifosup_display
+      MYSQL_USER: ifosup
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "33061:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  mysql-data:
+  app-storage:
+  app-logs:

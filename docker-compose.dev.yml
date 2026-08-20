@@ -1,0 +1,49 @@
+# Stack de développement : code monté en volume + Vite en hot-reload.
+# Usage : docker compose -f docker-compose.dev.yml up --build
+#   app  -> http://localhost:8000
+#   vite -> http://localhost:5173 (servi automatiquement par Laravel)
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: ifosup-display:dev
+    command: ["serve"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  vite:
+    image: ifosup-display:dev
+    command: ["vite"]
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ifosup_display
+      MYSQL_USER: ifosup
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "33062:3306"
+    volumes:
+      - mysql-dev-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  mysql-dev-data:
