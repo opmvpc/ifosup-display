@@ -33,9 +33,16 @@ déploiement, pas à développer.
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-- Application : <http://localhost:8000>
-- Serveur Vite : <http://localhost:5173> (Laravel s'y branche automatiquement)
-- MySQL exposé sur le port hôte `33062`
+- Application : <http://localhost:8001>
+- Serveur Vite : <http://localhost:5175> (Laravel s'y branche automatiquement)
+- MySQL exposé sur le port hôte `33063`
+
+Ces ports sont volontairement décalés des ports usuels (8000, 5173, 3306), souvent
+occupés par une autre application en cours de développement. Ils restent surchargeables :
+
+```bash
+APP_HOST_PORT=9000 VITE_HOST_PORT=5180 DB_HOST_PORT=33070   docker compose -f docker-compose.dev.yml up -d
+```
 - Configuration : `.env` à la racine (non versionné)
 
 Le code est monté en volume : `composer install` et `pnpm install` s'exécutent dans
@@ -75,5 +82,13 @@ ou saisir les données depuis le backoffice.
 
 ## Ports occupés
 
-Si 8080, 8000, 5173, 33061 ou 33062 sont déjà pris, modifier la partie gauche du
-mapping `ports:` dans le compose concerné.
+La stack de développement se surcharge par variables (`APP_HOST_PORT`, `VITE_HOST_PORT`,
+`DB_HOST_PORT`). Pour la stack prod-like, modifier la partie gauche du mapping `ports:`
+dans `docker-compose.yml`.
+
+**Piège spécifique à Windows.** `localhost` y résout d'abord en IPv6 (`::1`). Un serveur
+tiers écoutant sur `[::1]:5173` — typiquement le Vite d'un autre projet — capte alors les
+requêtes du navigateur avant le conteneur, qui écoute pourtant bien sur `0.0.0.0:5173`.
+Les symptômes sont déroutants : la page se charge, mais les composants Vue affichés
+appartiennent à l'autre projet. `netstat -ano | grep :5173` permet de repérer les deux
+processus en concurrence.
