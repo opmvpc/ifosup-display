@@ -1,0 +1,85 @@
+# Déploiement Coolify — application et base de données, volumes persistants déclarés
+# dans le dépôt.
+#
+# À utiliser en sélectionnant le build pack « Docker Compose » dans Coolify, avec ce
+# fichier comme compose de l'application. Les volumes nommés ci-dessous survivent aux
+# redéploiements : Coolify recrée les conteneurs, pas les volumes.
+#
+# Ne pas déclarer ces chemins avec l'instruction `VOLUME` du Dockerfile : elle produit
+# un volume ANONYME, recréé vide à chaque conteneur. Les plannings importés seraient
+# perdus à chaque déploiement, et les volumes orphelins s'accumuleraient.
+#
+# La base est incluse ici plutôt que déclarée comme ressource Coolify séparée : les
+# sauvegardes intégrées de Coolify ne s'appliquent donc pas, elles sont prises en
+# charge autrement (décision du 2026-08-20). Voir docs/deploiement-coolify.md.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Coolify remplace cette valeur par le domaine attribué à l'application.
+      - SERVICE_FQDN_APP_80
+      - APP_NAME=${APP_NAME:-Ifosup Display}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY:?APP_KEY doit etre defini dans Coolify}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${SERVICE_FQDN_APP_80}
+      - APP_LOCALE=${APP_LOCALE:-fr}
+      - APP_FALLBACK_LOCALE=${APP_FALLBACK_LOCALE:-fr}
+      - APP_SCREEN_TIMEZONE=${APP_SCREEN_TIMEZONE:-Europe/Brussels}
+      - LOG_CHANNEL=${LOG_CHANNEL:-stack}
+      - LOG_STACK=${LOG_STACK:-single}
+      - LOG_LEVEL=${LOG_LEVEL:-warning}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-ifosup_display}
+      - DB_USERNAME=${DB_USERNAME:-ifosup}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD doit etre defini dans Coolify}
+      - SESSION_DRIVER=${SESSION_DRIVER:-database}
+      - SESSION_LIFETIME=${SESSION_LIFETIME:-120}
+      - CACHE_STORE=${CACHE_STORE:-database}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
+      - BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-log}
+      - FILESYSTEM_DISK=${FILESYSTEM_DISK:-local}
+      - MAIL_MAILER=${MAIL_MAILER:-log}
+      # Compte administrateur créé au tout premier démarrage, si la base est vide.
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+    volumes:
+      # Plannings importés (storage/app/private) et médias des slides
+      # (storage/app/public, exposé par le lien symbolique public/storage).
+      - ifosup-storage:/app/storage/app
+      - ifosup-logs:/app/storage/logs
+    expose:
+      - '80'
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE:-ifosup_display}
+      - MYSQL_USER=${DB_USERNAME:-ifosup}
+      - MYSQL_PASSWORD=${DB_PASSWORD:?DB_PASSWORD doit etre defini dans Coolify}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD doit etre defini dans Coolify}
+    volumes:
+      - ifosup-mysql:/var/lib/mysql
+    healthcheck:
+      # L'application attend cet état avant de migrer : sans lui, le premier
+      # déploiement démarrerait avant que la base accepte les connexions.
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-p${DB_ROOT_PASSWORD}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  ifosup-storage:
+  ifosup-logs:
+  ifosup-mysql:

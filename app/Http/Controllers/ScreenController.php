@@ -27,7 +27,6 @@ class ScreenController extends Controller
         'evening' => ['evening'],
     ];
 
-
     public function index()
     {
         return Inertia::render('Screen');
@@ -40,8 +39,12 @@ class ScreenController extends Controller
         $timezone = (string) config('app.screen_timezone', 'Europe/Brussels');
         $now = now($timezone);
 
-        $currentPeriodKey = collect(self::PERIOD_TIMES)->search(function (array $times) use ($now) {
-            return $now->between(
+        // Les bornes de PERIOD_TIMES sont à la seconde près : sans troncature,
+        // un `now` à 23:59:59,5 ne tombe dans aucune période et l'écran se vide.
+        $nowToTheSecond = $now->copy()->startOfSecond();
+
+        $currentPeriodKey = collect(self::PERIOD_TIMES)->search(function (array $times) use ($now, $nowToTheSecond) {
+            return $nowToTheSecond->between(
                 Carbon::createFromTimeString($times[0], $now->getTimezone()),
                 Carbon::createFromTimeString($times[1], $now->getTimezone())
             );

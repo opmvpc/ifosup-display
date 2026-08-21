@@ -1,0 +1,65 @@
+# Stack de développement : code monté en volume + Vite en hot-reload.
+# Usage : docker compose -f docker-compose.dev.yml up --build
+#   app  -> http://localhost:8001
+#   vite -> http://localhost:5175 (servi automatiquement par Laravel)
+#
+# Les ports par défaut sont volontairement décalés des ports usuels (8000, 5173, 3306) :
+# une autre application en cours de développement sur la machine les occupe souvent, et
+# sous Windows `localhost` résout d'abord en IPv6 — un serveur tiers écoutant sur [::1]
+# capte alors les requêtes avant le conteneur, avec des symptômes très déroutants.
+# Chacun reste surchargeable :
+#   APP_HOST_PORT=9000 VITE_HOST_PORT=5180 docker compose -f docker-compose.dev.yml up -d
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: ifosup-display:dev
+    command: ["serve"]
+    environment:
+      APP_URL: "http://localhost:${APP_HOST_PORT:-8001}"
+    ports:
+      - "${APP_HOST_PORT:-8001}:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  vite:
+    image: ifosup-display:dev
+    command: ["vite"]
+    environment:
+      # Active le bloc `server` de vite.config.ts : écoute sur toutes les interfaces
+      # tout en annonçant au navigateur le port réellement publié sur l'hôte.
+      VITE_DOCKER: "1"
+      VITE_HOST_PORT: "${VITE_HOST_PORT:-5175}"
+      # Origine autorisée par le CORS du serveur Vite : celle de l'application.
+      APP_HOST_PORT: "${APP_HOST_PORT:-8001}"
+    ports:
+      - "${VITE_HOST_PORT:-5175}:5173"
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ifosup_display
+      MYSQL_USER: ifosup
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "${DB_HOST_PORT:-33063}:3306"
+    volumes:
+      - mysql-dev-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  mysql-dev-data:

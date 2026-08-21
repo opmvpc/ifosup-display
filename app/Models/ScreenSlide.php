@@ -12,8 +12,11 @@ class ScreenSlide extends Model
     use HasFactory;
 
     public const TYPE_WELCOME = 'welcome';
+
     public const TYPE_SCHEDULE = 'schedule';
+
     public const TYPE_IMAGE = 'image';
+
     public const TYPE_VIDEO = 'video';
 
     protected $fillable = [
@@ -36,19 +39,19 @@ class ScreenSlide extends Model
     {
         static::deleting(function (self $slide): void {
             if ($slide->image_path) {
-                Storage::delete($slide->image_path);
+                Storage::disk('public')->delete($slide->image_path);
             }
             if ($slide->video_path) {
-                Storage::delete($slide->video_path);
+                Storage::disk('public')->delete($slide->video_path);
             }
         });
 
         static::updating(function (self $slide): void {
             if ($slide->isDirty('image_path') && $slide->getOriginal('image_path')) {
-                Storage::delete($slide->getOriginal('image_path'));
+                Storage::disk('public')->delete($slide->getOriginal('image_path'));
             }
             if ($slide->isDirty('video_path') && $slide->getOriginal('video_path')) {
-                Storage::delete($slide->getOriginal('video_path'));
+                Storage::disk('public')->delete($slide->getOriginal('video_path'));
             }
         });
     }
@@ -77,9 +80,14 @@ class ScreenSlide extends Model
         ]);
     }
 
+    /**
+     * URL relative (`/storage/...`) servie via le lien symbolique `public/storage`.
+     * Volontairement sur le disque par défaut : garder l'URL relative évite de
+     * dépendre d'un `APP_URL` correct derrière un proxy.
+     */
     public function imageUrl(): ?string
     {
-        if (!$this->image_path) {
+        if (! $this->image_path) {
             return null;
         }
 
@@ -88,7 +96,7 @@ class ScreenSlide extends Model
 
     public function videoUrl(): ?string
     {
-        if (!$this->video_path) {
+        if (! $this->video_path) {
             return null;
         }
 

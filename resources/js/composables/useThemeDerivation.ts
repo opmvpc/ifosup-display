@@ -1,4 +1,5 @@
-import { MaybeRef, toValue } from 'vue';
+import type { MaybeRef } from 'vue';
+import { toValue } from 'vue';
 
 export interface DerivedTheme {
     primary: string;

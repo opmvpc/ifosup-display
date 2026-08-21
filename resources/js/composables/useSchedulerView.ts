@@ -6,7 +6,10 @@ export type ZoomLevel = keyof typeof ZOOM_STEPS;
 
 const ZOOM_ORDER = Object.keys(ZOOM_STEPS) as ZoomLevel[];
 
-export default function useSchedulerView(initialZoom: ZoomLevel = 'normal', initialFullscreen = false) {
+export default function useSchedulerView(
+    initialZoom: ZoomLevel = 'normal',
+    initialFullscreen = false,
+) {
     const zoom = ref(initialZoom);
     const isFullscreen = ref(initialFullscreen);
 
@@ -14,12 +17,28 @@ export default function useSchedulerView(initialZoom: ZoomLevel = 'normal', init
     const canZoomIn = computed(() => zoomIndex.value < ZOOM_ORDER.length - 1);
     const canZoomOut = computed(() => zoomIndex.value > 0);
 
-    const zoomIn = () => { if (canZoomIn.value) zoom.value = ZOOM_ORDER[zoomIndex.value + 1]; };
-    const zoomOut = () => { if (canZoomOut.value) zoom.value = ZOOM_ORDER[zoomIndex.value - 1]; };
-    const toggleFullscreen = () => { isFullscreen.value = !isFullscreen.value; };
+    const zoomIn = () => {
+        if (canZoomIn.value) zoom.value = ZOOM_ORDER[zoomIndex.value + 1];
+    };
+    const zoomOut = () => {
+        if (canZoomOut.value) zoom.value = ZOOM_ORDER[zoomIndex.value - 1];
+    };
+    const toggleFullscreen = () => {
+        isFullscreen.value = !isFullscreen.value;
+    };
 
     const zoomRatio = computed(() => ZOOM_STEPS[zoom.value]);
     const zoomLabel = computed(() => zoomRatio.value.toFixed(1));
 
-    return { zoom, zoomRatio, isFullscreen, canZoomIn, canZoomOut, zoomIn, zoomOut, toggleFullscreen, zoomLabel };
+    return {
+        zoom,
+        zoomRatio,
+        isFullscreen,
+        canZoomIn,
+        canZoomOut,
+        zoomIn,
+        zoomOut,
+        toggleFullscreen,
+        zoomLabel,
+    };
 }

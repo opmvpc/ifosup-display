@@ -22,7 +22,7 @@ class UpdateRoomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "name" => "required|string|max:255",
+            'name' => 'required|string|max:255|unique:rooms,name,'.$this->route('room')->id,
         ];
     }
 
@@ -34,9 +34,10 @@ class UpdateRoomRequest extends FormRequest
     public function messages(): array
     {
         return [
-            "name.required" => "Le nom de la salle est requis.",
-            "name.string" => "Le nom de la salle doit être une chaîne de caractères.",
-            "name.max" => "Le nom de la salle ne peut pas dépasser 255 caractères.",
+            'name.required' => 'Le nom de la salle est requis.',
+            'name.string' => 'Le nom de la salle doit être une chaîne de caractères.',
+            'name.max' => 'Le nom de la salle ne peut pas dépasser 255 caractères.',
+            'name.unique' => 'Un local porte déjà ce nom.',
         ];
     }
 }

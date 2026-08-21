@@ -17,6 +17,7 @@ class RoomController extends Controller
     public function index(): Response
     {
         $rooms = Room::all();
+
         return Inertia::render('resources/rooms/Index', [
             'rooms' => $rooms,
         ]);

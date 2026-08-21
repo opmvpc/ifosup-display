@@ -15,6 +15,7 @@ class GroupController extends Controller
     public function index()
     {
         $groups = Group::all();
+
         return Inertia::render('resources/groups/Index', [
             'groups' => $groups,
         ]);
@@ -84,6 +85,7 @@ class GroupController extends Controller
     public function destroy(Group $group)
     {
         $group->delete();
+
         return redirect()->route('groups.index');
     }
 }

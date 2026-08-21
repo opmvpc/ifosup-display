@@ -28,8 +28,9 @@ class CreateAdminUser extends Command
         $email = env('ADMIN_EMAIL');
         $password = env('ADMIN_PASSWORD');
 
-        if (!$email || !$password) {
+        if (! $email || ! $password) {
             $this->info('Variables ADMIN_EMAIL ou ADMIN_PASSWORD manquantes. Saut de l\'étape.');
+
             return;
         }
 

@@ -1,0 +1,248 @@
+<?php
+
+use App\Services\SchedulerSheetParser;
+use Tests\Support\CreatesSchedulerFixture;
+
+uses(CreatesSchedulerFixture::class);
+
+function parseWorkbook(\PhpOffice\PhpSpreadsheet\Spreadsheet $spreadsheet, int $startYear = 2025): array
+{
+    $path = test()->saveWorkbook($spreadsheet);
+
+    return (new SchedulerSheetParser)->parse($path, $startYear);
+}
+
+it('parse un bloc simple matin/midi/soir avec les bonnes dates, salles et cours', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'COURS-A'],
+        5 => [2 => 'Salle 102', 3 => 'COURS-B'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toBe([
+        ['date' => '2025-09-08', 'period' => 'morning', 'local' => 'Salle 101', 'course' => 'COURS-A'],
+        ['date' => '2025-09-08', 'period' => 'morning', 'local' => 'Salle 102', 'course' => 'COURS-B'],
+    ]);
+});
+
+it('déduit la deuxième date du bloc par +7 jours et ignore le contenu de la cellule', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09', 4 => '01/01'],
+        4 => [2 => 'Salle 101', 3 => 'X', 4 => 'Y'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(2);
+    expect($result[1]['course'])->toBe('Y');
+    expect($result[1]['date'])->toBe('2025-09-15');
+});
+
+it('ignore une colonne de la ligne de dates si elle est vide, sans décaler les semaines suivantes', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09', 5 => '22/09'],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B', 5 => 'C'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    $courses = array_column($result, 'course');
+    expect($courses)->not->toContain('B');
+    expect($result)->toHaveCount(2);
+
+    $entryC = collect($result)->firstWhere('course', 'C');
+    expect($entryC['date'])->toBe('2025-09-15');
+});
+
+it('ne garde que la première ligne d\'un nom de salle multi-lignes', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => "Salle 101\nAnnexe", 3 => 'X'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['local'])->toBe('Salle 101');
+});
+
+it('n\'importe que la première ligne d\'une cellule salle fusionnée sur plusieurs lignes et saute les lignes suivantes', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A'],
+        5 => [3 => 'B'],
+        6 => [3 => 'C'],
+    ]);
+    test()->mergeRange($sheet, 2, 4, 6);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['course'])->toBe('A');
+    expect(array_column($result, 'course'))->not->toContain('B')->not->toContain('C');
+});
+
+it('arrête le bloc de données après deux lignes vides consécutives sur la colonne locale', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A'],
+        7 => [2 => 'Salle 999', 3 => 'Z'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['local'])->toBe('Salle 101');
+});
+
+it('saute une ligne locale vide isolée si la ligne suivante contient une valeur', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A'],
+        6 => [2 => 'Salle 102', 3 => 'B'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect(array_column($result, 'local'))->toBe(['Salle 101', 'Salle 102']);
+});
+
+it('traite plusieurs blocs matin/midi/soir empilés dans la même feuille', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A'],
+        8 => [3 => 'Midi'],
+        9 => [3 => '08/09'],
+        11 => [2 => 'Salle 102', 3 => 'B'],
+        15 => [3 => 'Soir'],
+        16 => [3 => '08/09'],
+        18 => [2 => 'Salle 103', 3 => 'C'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(3);
+    expect(collect($result)->pluck('period', 'course')->all())->toBe([
+        'A' => 'morning',
+        'B' => 'afternoon',
+        'C' => 'evening',
+    ]);
+});
+
+it('fusionne les données de plusieurs feuilles du classeur', function () {
+    $spreadsheet = test()->newWorkbook();
+
+    $sheet1 = $spreadsheet->getActiveSheet();
+    $sheet1->setTitle('Feuille1');
+    test()->fillGrid($sheet1, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A'],
+    ]);
+
+    $sheet2 = $spreadsheet->createSheet();
+    $sheet2->setTitle('Feuille2');
+    test()->fillGrid($sheet2, [
+        1 => [3 => 'Soir'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 201', 3 => 'B'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(2);
+    expect(array_column($result, 'course'))->toBe(['A', 'B']);
+});
+
+it('reconnaît les en-têtes insensibles à la casse et aux accents é/è/ê/ë', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A'],
+        8 => [3 => 'MIDI'],
+        9 => [3 => '08/09'],
+        11 => [2 => 'Salle 102', 3 => 'B'],
+        15 => [3 => 'soir'],
+        16 => [3 => '08/09'],
+        18 => [2 => 'Salle 103', 3 => 'C'],
+        22 => [3 => 'Après-midi'],
+        23 => [3 => '08/09'],
+        25 => [2 => 'Salle 104', 3 => 'D'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect(collect($result)->pluck('period', 'course')->all())->toBe([
+        'A' => 'morning',
+        'B' => 'afternoon',
+        'C' => 'evening',
+        'D' => 'afternoon',
+    ]);
+});
+
+it('ignore une cellule cours non vide dans une colonne sans date mappée', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09'],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['course'])->toBe('A');
+});
+
+it('retourne un tableau vide pour une feuille sans en-tête reconnu', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [1 => 'Bonjour', 2 => 'Ceci', 3 => "n'est pas un planning"],
+        2 => [1 => 'Salle 101', 2 => 'X'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toBe([]);
+});

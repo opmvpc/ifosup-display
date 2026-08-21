@@ -1,0 +1,20 @@
+# Image de développement : le code est monté en volume, rien n'est copié ici.
+FROM dunglas/frankenphp:php8.4-bookworm
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs git unzip && \
+    npm install -g pnpm@10 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN install-php-extensions pdo_mysql bcmath gd zip intl pcntl opcache xdebug
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+COPY docker/dev-entrypoint.sh /dev-entrypoint.sh
+RUN chmod +x /dev-entrypoint.sh
+
+EXPOSE 8000 5173
+ENTRYPOINT ["/dev-entrypoint.sh"]
+CMD ["serve"]

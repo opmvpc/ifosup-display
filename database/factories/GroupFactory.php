@@ -17,7 +17,8 @@ class GroupFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => strtoupper(fake()->bothify('G-##??')),
+            // unique() : `groups.name` porte une contrainte d'unicité en base.
+            'name' => strtoupper(fake()->unique()->bothify('G-##??')),
         ];
     }
 }

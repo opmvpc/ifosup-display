@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\ScheduleIndexRequest;
 use App\Http\Requests\StoreScheduleAssignmentRequest;
 use App\Http\Requests\UpdateScheduleAssignmentRequest;
@@ -137,18 +136,31 @@ class ScheduleController extends Controller
     public function bulkPreview(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'course_id'   => ['required', 'integer', 'exists:courses,id'],
-            'room_id'     => ['required', 'integer', 'exists:rooms,id'],
+            'course_id' => ['required', 'integer', 'exists:courses,id'],
+            'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'day_of_week' => ['required', 'integer', 'min:1', 'max:7'],
-            'period'      => ['required', 'in:morning,afternoon,evening'],
-            'start_week'  => ['required', 'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/'],
-            'end_week'    => ['required', 'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/', 'gte:start_week'],
+            'period' => ['required', 'in:morning,afternoon,evening'],
+            'start_week' => ['required', 'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/'],
+            'end_week' => [
+                'required',
+                'regex:/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                    $startWeek = $request->input('start_week');
+
+                    // Une fois le format YYYY-Www garanti par la regex ci-dessus, la comparaison
+                    // lexicographique correspond à l'ordre chronologique (contrairement à `gte`,
+                    // qui compare la longueur des chaînes et ne rejette donc jamais rien ici).
+                    if (is_string($startWeek) && $value < $startWeek) {
+                        $fail('La semaine de fin doit être postérieure ou égale à la semaine de début.');
+                    }
+                },
+            ],
         ]);
 
         $rangeStart = $this->isoWeekToMonday($data['start_week']);
-        $rangeEnd   = $this->isoWeekToMonday($data['end_week'])->addDays(6);
+        $rangeEnd = $this->isoWeekToMonday($data['end_week'])->addDays(6);
 
-        $dayOffset       = ($data['day_of_week'] - $rangeStart->isoWeekday() + 7) % 7;
+        $dayOffset = ($data['day_of_week'] - $rangeStart->isoWeekday() + 7) % 7;
         $firstOccurrence = $rangeStart->copy()->addDays($dayOffset);
 
         $dates = [];
@@ -164,12 +176,13 @@ class ScheduleController extends Controller
             ->with('course:id,name,code')
             ->whereIn('date', $dates)
             ->where('period', $data['period'])
+            ->where('room_id', $data['room_id'])
             ->get()
-            ->map(fn($a) => [
-                'id'      => $a->id,
-                'date'    => $a->date->toDateString(),
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'date' => $a->date->toDateString(),
                 'room_id' => $a->room_id,
-                'course'  => $a->course,
+                'course' => $a->course,
             ]);
 
         return response()->json(['dates' => $dates, 'existing' => $existing]);
@@ -178,10 +191,10 @@ class ScheduleController extends Controller
     public function bulkStore(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'course_id'      => ['required', 'integer', 'exists:courses,id'],
-            'period'         => ['required', 'in:morning,afternoon,evening'],
-            'rows'           => ['required', 'array', 'min:1'],
-            'rows.*.date'    => ['required', 'date_format:Y-m-d'],
+            'course_id' => ['required', 'integer', 'exists:courses,id'],
+            'period' => ['required', 'in:morning,afternoon,evening'],
+            'rows' => ['required', 'array', 'min:1'],
+            'rows.*.date' => ['required', 'date_format:Y-m-d'],
             'rows.*.room_id' => ['required', 'integer', 'exists:rooms,id'],
         ]);
 
@@ -196,10 +209,10 @@ class ScheduleController extends Controller
 
                 Assignment::query()->create([
                     'course_id' => $data['course_id'],
-                    'room_id'   => $row['room_id'],
-                    'date'      => $row['date'],
-                    'period'    => $data['period'],
-                    'status'    => 'planned',
+                    'room_id' => $row['room_id'],
+                    'date' => $row['date'],
+                    'period' => $data['period'],
+                    'status' => 'planned',
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);
@@ -216,7 +229,7 @@ class ScheduleController extends Controller
         $year = (int) $matches[1];
         $week = (int) $matches[2];
 
-        $jan4          = Carbon::create($year, 1, 4, 0, 0, 0, 'UTC')->startOfDay();
+        $jan4 = Carbon::create($year, 1, 4, 0, 0, 0, 'UTC')->startOfDay();
         $weekOneMonday = $jan4->copy()->subDays($jan4->isoWeekday() - 1);
 
         return $weekOneMonday->addWeeks($week - 1);
@@ -229,7 +242,7 @@ class ScheduleController extends Controller
         ?int $ignoreAssignmentId = null,
     ): bool {
         return Assignment::query()
-            ->when($ignoreAssignmentId !== null, fn($query) => $query->where('id', '!=', $ignoreAssignmentId))
+            ->when($ignoreAssignmentId !== null, fn ($query) => $query->where('id', '!=', $ignoreAssignmentId))
             ->where('room_id', $roomId)
             ->whereDate('date', $date)
             ->where('period', $period)

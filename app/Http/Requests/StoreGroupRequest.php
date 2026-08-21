@@ -22,7 +22,7 @@ class StoreGroupRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "name" => "required|string|max:255",
+            'name' => 'required|string|max:255|unique:groups,name',
         ];
     }
 
@@ -34,9 +34,10 @@ class StoreGroupRequest extends FormRequest
     public function messages(): array
     {
         return [
-            "name.required" => "Le nom est requis.",
-            "name.string" => "Le nom doit être une chaîne de caractères.",
-            "name.max" => "Le nom ne peut pas dépasser 255 caractères.",
+            'name.required' => 'Le nom est requis.',
+            'name.string' => 'Le nom doit être une chaîne de caractères.',
+            'name.max' => 'Le nom ne peut pas dépasser 255 caractères.',
+            'name.unique' => 'Une section porte déjà ce nom.',
         ];
     }
 }

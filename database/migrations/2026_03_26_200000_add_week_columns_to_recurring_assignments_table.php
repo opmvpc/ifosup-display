@@ -16,13 +16,13 @@ return new class extends Migration
         $hasStartWeek = Schema::hasColumn('recurring_assignments', 'start_week');
         $hasEndWeek = Schema::hasColumn('recurring_assignments', 'end_week');
 
-        if (!$hasStartWeek || !$hasEndWeek) {
+        if (! $hasStartWeek || ! $hasEndWeek) {
             Schema::table('recurring_assignments', function (Blueprint $table) use ($hasStartWeek, $hasEndWeek): void {
-                if (!$hasStartWeek) {
+                if (! $hasStartWeek) {
                     $table->string('start_week', 8)->nullable()->after('period');
                 }
 
-                if (!$hasEndWeek) {
+                if (! $hasEndWeek) {
                     $table->string('end_week', 8)->nullable()->after('start_week');
                 }
             });
@@ -34,7 +34,7 @@ return new class extends Migration
                 ->orderBy('id')
                 ->chunkById(200, function ($rows): void {
                     foreach ($rows as $row) {
-                        if (!$row->start_date || !$row->end_date) {
+                        if (! $row->start_date || ! $row->end_date) {
                             continue;
                         }
 

@@ -1,4 +1,4 @@
-import { RouteDefinition } from '@/wayfinder';
+import type { RouteDefinition } from '@/wayfinder';
 
 export interface ResourceControllerActions {
     index: (options?: any) => RouteDefinition<any>;

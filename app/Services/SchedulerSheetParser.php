@@ -3,16 +3,16 @@
 namespace App\Services;
 
 use Carbon\Carbon;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SchedulerSheetParser
 {
     private const PERIOD_MAP = [
         'matin' => 'morning',
-        'midi'  => 'afternoon',
-        'soir'  => 'evening',
+        'midi' => 'afternoon',
+        'soir' => 'evening',
     ];
 
     public function parse(string $absolutePath, int $startYear): array
@@ -58,18 +58,19 @@ class SchedulerSheetParser
     private function findHeaderInRow(Worksheet $sheet, int $row, int $maxCol): ?array
     {
         for ($c = 1; $c <= $maxCol; $c++) {
-            $val = (string)$sheet->getCell([$c, $row])->getValue();
+            $val = (string) $sheet->getCell([$c, $row])->getValue();
             $normalized = $this->normalize($val);
 
             foreach (self::PERIOD_MAP as $keyword => $periodKey) {
                 if (str_contains($normalized, $keyword)) {
                     return [
                         'period' => $periodKey,
-                        'colIndex' => $c
+                        'colIndex' => $c,
                     ];
                 }
             }
         }
+
         return null;
     }
 
@@ -81,12 +82,15 @@ class SchedulerSheetParser
 
         while ($currentRow <= $sheet->getHighestRow()) {
             $cellLocal = $sheet->getCell([$localCol, $currentRow]);
-            $rawLocal = trim((string)$cellLocal->getValue());
+            $rawLocal = trim((string) $cellLocal->getValue());
 
             if (empty($rawLocal)) {
-                $nextValue = trim((string)$sheet->getCell([$localCol, $currentRow + 1])->getValue());
-                if (empty($nextValue)) break;
+                $nextValue = trim((string) $sheet->getCell([$localCol, $currentRow + 1])->getValue());
+                if (empty($nextValue)) {
+                    break;
+                }
                 $currentRow++;
+
                 continue;
             }
 
@@ -100,13 +104,13 @@ class SchedulerSheetParser
             }
 
             for ($c = $header['colIndex']; $c <= $maxCol; $c++) {
-                $course = trim((string)$sheet->getCell([$c, $currentRow])->getValue());
-                if (!empty($course) && isset($datesMap[$c])) {
+                $course = trim((string) $sheet->getCell([$c, $currentRow])->getValue());
+                if (! empty($course) && isset($datesMap[$c])) {
                     $data[] = [
-                        'date'   => $datesMap[$c],
+                        'date' => $datesMap[$c],
                         'period' => $header['period'], // "morning", "afternoon" ou "evening"
-                        'local'  => $localValue,
-                        'course' => $course
+                        'local' => $localValue,
+                        'course' => $course,
                     ];
                 }
             }
@@ -119,6 +123,7 @@ class SchedulerSheetParser
     private function normalize(string $value): string
     {
         $value = mb_strtolower($value, 'UTF-8');
+
         return str_replace(['é', 'è', 'ê', 'ë'], 'e', $value);
     }
 
@@ -129,9 +134,11 @@ class SchedulerSheetParser
 
         for ($c = $startCol; $c <= $maxCol; $c++) {
             $val = $sheet->getCell([$c, $row])->getCalculatedValue();
-            if (empty($val)) continue;
+            if (empty($val)) {
+                continue;
+            }
 
-            if (!$currentDate) {
+            if (! $currentDate) {
                 $currentDate = Carbon::createFromFormat('d/m/Y', "{$val}/{$year}")->startOfDay();
             } else {
                 $currentDate->addWeek();

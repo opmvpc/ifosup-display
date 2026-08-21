@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -14,6 +16,10 @@
 pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
+
+pest()->extend(Tests\TestCase::class)
+    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->in('Unit/Services');
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +47,17 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Crée un utilisateur vérifié et l'authentifie pour la requête à venir.
+ *
+ * Le middleware des routes du backoffice est `auth` + `verified` : un utilisateur
+ * non vérifié serait redirigé. `UserFactory` produit déjà des comptes vérifiés.
+ */
+function actingAsUser(?User $user = null): User
 {
-    // ..
+    $user ??= User::factory()->create();
+
+    test()->actingAs($user);
+
+    return $user;
 }
