@@ -58,3 +58,22 @@ it('applique aussi l\'unicité à un nom purement numérique', function () {
 
     expect(Room::where('name', '106')->count())->toBe(1);
 });
+
+// Le formulaire lit les erreurs depuis les props Inertia de la page de retour.
+// `ResourceFormLayout` remontait le composant Form à chaque réponse — sa clé dérivant
+// d'un `_formKey` régénéré à chaque requête — ce qui effaçait erreurs et saisies.
+it('transmet l\'erreur d\'unicité aux props Inertia de la page de retour', function () {
+    actingAsUser();
+    Room::factory()->create(['name' => '106']);
+
+    $this->post(route('rooms.store'), ['name' => '106'])
+        ->assertRedirect()
+        ->assertSessionHasErrors('name');
+
+    $this->followingRedirects()
+        ->get(route('rooms.create'))
+        ->assertInertia(fn (Inertia\Testing\AssertableInertia $page) => $page
+            ->component('resources/rooms/Create')
+            ->where('errors.name', 'Un local porte déjà ce nom.')
+        );
+});

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Link, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import type { ResourceRoutes } from '@/composables/useResourceRoutes';
@@ -52,7 +52,28 @@ const breadcrumbItems: BreadcrumbItem[] = [
 
 const createAnother = ref(false);
 const page = usePage();
-const formKey = computed(() => (page.props as any)._formKey as string);
+
+const pageErrors = computed(
+    () => ((page.props as any).errors ?? {}) as Record<string, string>,
+);
+const hasErrors = computed(() => Object.keys(pageErrors.value).length > 0);
+
+// `_formKey` est un identifiant régénéré à chaque requête par AppServiceProvider :
+// il sert à remonter le formulaire après « Créer et créer un autre », afin de repartir
+// de champs vides. Mais il change AUSSI au retour d'une validation échouée — le
+// formulaire était alors détruit et recréé, ce qui effaçait les messages d'erreur et
+// les valeurs saisies. La clé n'est donc mise à jour que lorsqu'aucune erreur n'est
+// présente.
+const formKey = ref((page.props as any)._formKey as string);
+
+watch(
+    () => (page.props as any)._formKey as string,
+    (nouvelleCle) => {
+        if (!hasErrors.value) {
+            formKey.value = nouvelleCle;
+        }
+    },
+);
 </script>
 
 <template>
@@ -75,7 +96,12 @@ const formKey = computed(() => (page.props as any)._formKey as string);
                         :value="createAnother ? '1' : '0'"
                     />
 
-                    <slot :errors="errors" :processing="processing" />
+                    <!-- Les erreurs de la page servent de filet : si le formulaire
+                         a malgré tout été remonté, celles du composant Form sont vides. -->
+                    <slot
+                        :errors="{ ...pageErrors, ...errors }"
+                        :processing="processing"
+                    />
 
                     <div class="flex items-center gap-4">
                         <Button
