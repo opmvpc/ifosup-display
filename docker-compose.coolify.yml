@@ -9,6 +9,11 @@
 # un volume ANONYME, recréé vide à chaque conteneur. Les plannings importés seraient
 # perdus à chaque déploiement, et les volumes orphelins s'accumuleraient.
 #
+# APP_KEY, DB_PASSWORD et DB_ROOT_PASSWORD sont écrits `${VAR}`, sans valeur par défaut :
+# Coolify les présente ainsi comme des champs vides à remplir. Ne pas utiliser la forme
+# `${VAR:?message}` — Coolify n'interprète pas `:?` comme une exigence et pré-remplit le
+# champ avec le message lui-même, qui deviendrait le mot de passe.
+#
 # La base est incluse ici plutôt que déclarée comme ressource Coolify séparée : les
 # sauvegardes intégrées de Coolify ne s'appliquent donc pas, elles sont prises en
 # charge autrement (décision du 2026-08-20). Voir docs/deploiement-coolify.md.
@@ -24,7 +29,7 @@ services:
       - SERVICE_FQDN_APP_80
       - APP_NAME=${APP_NAME:-Ifosup Display}
       - APP_ENV=${APP_ENV:-production}
-      - APP_KEY=${APP_KEY:?APP_KEY doit etre defini dans Coolify}
+      - APP_KEY=${APP_KEY}
       - APP_DEBUG=${APP_DEBUG:-false}
       # Coolify renseigne SERVICE_FQDN_APP_80 avec le domaine attribué. Définir
       # APP_URL manuellement prend le dessus, utile derrière un proxy tiers.
@@ -40,7 +45,7 @@ services:
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-ifosup_display}
       - DB_USERNAME=${DB_USERNAME:-ifosup}
-      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD doit etre defini dans Coolify}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SESSION_DRIVER=${SESSION_DRIVER:-database}
       - SESSION_LIFETIME=${SESSION_LIFETIME:-120}
       - CACHE_STORE=${CACHE_STORE:-database}
@@ -70,8 +75,8 @@ services:
     environment:
       - MYSQL_DATABASE=${DB_DATABASE:-ifosup_display}
       - MYSQL_USER=${DB_USERNAME:-ifosup}
-      - MYSQL_PASSWORD=${DB_PASSWORD:?DB_PASSWORD doit etre defini dans Coolify}
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD doit etre defini dans Coolify}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
     volumes:
       - ifosup-mysql:/var/lib/mysql
     healthcheck:

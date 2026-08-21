@@ -20,13 +20,8 @@ uniquement au poste local : ne pas les sélectionner ici.
 
 ## 2. Variables d'environnement
 
-**Trois variables sont obligatoires.** Sans elles, le déploiement s'arrête net avec un
-message explicite, plutôt que de lancer une application cassée :
-
-```
-error while interpolating services.app.environment.[]:
-required variable APP_KEY is missing a value: APP_KEY doit etre defini dans Coolify
-```
+**Trois variables sont obligatoires.** Elles apparaissent comme des champs vides dans
+l'interface Coolify, qui lit le compose pour pré-remplir la liste.
 
 | Variable | Valeur |
 |---|---|
@@ -39,6 +34,17 @@ Génération de la clé applicative :
 ```bash
 php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
 ```
+
+Laissées vides, elles ne produisent pas de démarrage silencieux : l'image MySQL refuse
+de démarrer (« You need to specify one of the following as an environment variable:
+MYSQL_ROOT_PASSWORD… ») et Laravel s'arrête sur « No application encryption key has been
+specified. »
+
+Le compose les déclare volontairement sous la forme `${VAR}`, sans valeur par défaut.
+La forme `${VAR:?message}`, pourtant standard en Docker Compose pour signaler une
+variable obligatoire, est à proscrire ici : Coolify ne l'interprète pas comme une
+exigence et **pré-remplit le champ avec le message lui-même**, qui deviendrait alors le
+mot de passe.
 
 **Deux variables sont indispensables au premier déploiement seulement** — elles créent
 le compte administrateur si la table `users` est vide, et n'ont plus aucun effet ensuite :
