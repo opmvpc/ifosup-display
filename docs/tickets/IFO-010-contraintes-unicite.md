@@ -39,6 +39,8 @@ vérifications « lire puis écrire » qui ne protègent pas de deux écritures 
       base locale, le local « 106 » a conservé ses 18 attributions
 - [x] Les factories `Room`, `Group` et `Teacher` génèrent des noms uniques
 - [x] La suite de tests reste verte
+- [x] Les FormRequests portent la règle `unique` correspondante — sans elle, une
+      contrainte en base transforme un message d'erreur en 500
 
 ## Décision consignée : `teachers.name`
 
@@ -71,3 +73,24 @@ la migration, pour qui la relira sans ce ticket sous les yeux.
   créneau pour démontrer que `updateStatus` ne contrôle pas l'occupation : cette mise
   en scène est désormais impossible, le test a été réécrit et la garantie déplacée
   vers le nouveau fichier.
+- 2026-08-20 — **régression corrigée, signalée en recette.** Les contraintes avaient été
+  posées en base sans leur pendant applicatif : créer un local « 106 » déjà existant
+  passait la validation puis échouait sur la contrainte SQL, en erreur 500. `unique` est
+  ajouté aux six FormRequests (locaux, sections, enseignants, création et modification,
+  avec exclusion de l'enregistrement courant).
+
+  Aucun test ne l'avait vu parce que la couverture existante ne tentait jamais de créer
+  un doublon — c'était autorisé jusque-là, il n'y avait rien à vérifier. Ajouter une
+  contrainte change le contrat, et la couverture doit suivre dans le même mouvement.
+  `tests/Feature/Resources/UniqueNameValidationTest.php` comble le trou, y compris le
+  cas d'une modification qui conserve son propre nom — celui que `unique` casse si l'on
+  oublie d'exclure l'enregistrement courant.
+
+  Les fixtures n'utilisaient par ailleurs que des noms alphanumériques (« Salle 101 »)
+  alors que les locaux réels de l'école sont numériques (« 106 »). Deux tests couvrent
+  désormais ce format.
+
+  **Règle à retenir : une contrainte d'unicité en base s'accompagne toujours de la règle
+  `unique` applicative et des tests de refus. Sinon on déplace un message d'erreur vers
+  une page d'erreur serveur.**
+

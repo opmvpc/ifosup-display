@@ -54,6 +54,7 @@ déploiement Coolify lui-même.
 | IFO-011 | Aucun fichier de langue malgré `APP_LOCALE=fr` | Une douzaine de formulaires affichaient `validation.required` à l'écran |
 | IFO-011 | Les appels hors Inertia jetaient le détail des erreurs 422 | L'utilisateur voyait « Une erreur est survenue. » sans savoir quoi corriger |
 | IFO-011 | `gte:start_week` comparait la longueur des chaînes, jamais les dates | Une plage de semaines inversée était acceptée en silence |
+| IFO-010 | Contraintes d'unicité posées en base sans règle `unique` applicative | Créer un doublon renvoyait une erreur 500 au lieu d'un message sous le champ (trouvé en recette) |
 
 `bulkPreview` a par ailleurs été restreint au local demandé : ce n'était pas un bug
 fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
@@ -62,8 +63,8 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 
 | Vérification | Résultat |
 |---|---|
-| `php artisan test` | **261 passés**, 7 ignorés (2FA), 0 échec — 1047 assertions |
-| `composer lint:check` | PASS, 143 fichiers |
+| `php artisan test` | **273 passés**, 7 ignorés (2FA), 0 échec — 1080 assertions |
+| `composer lint:check` | PASS, 145 fichiers |
 | `pnpm format:check` | PASS |
 | `pnpm lint:check` | 0 erreur |
 | `pnpm types:check` | 0 erreur, et vérifié par la CI |
