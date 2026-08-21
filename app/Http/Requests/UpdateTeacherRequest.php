@@ -22,7 +22,7 @@ class UpdateTeacherRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:teachers,name,'.$this->route('teacher')->id,
         ];
     }
 
@@ -37,6 +37,7 @@ class UpdateTeacherRequest extends FormRequest
             'name.required' => 'Le nom est requis.',
             'name.string' => 'Le nom doit être une chaîne de caractères.',
             'name.max' => 'Le nom ne peut pas dépasser 255 caractères.',
+            'name.unique' => 'Un enseignant porte déjà ce nom.',
         ];
     }
 }
