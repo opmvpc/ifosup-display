@@ -9,10 +9,11 @@ Projet de stage repris par l'école. Le code métier est fonctionnel et bien str
 Excel, écran public `/screen`).
 
 La reprise en main est faite : le projet tourne en Docker en local sur l'image exacte
-qui partira en production, le style est à niveau, **261 tests couvrent le métier** et
+qui partira en production, le style est à niveau, **273 tests couvrent le métier** et
 les deux workflows GitHub Actions vérifient réellement quelque chose — ils sont verts
-sur un vrai runner. **Neuf bugs** ont été corrigés au passage, dont quatre qui auraient
-bloqué ou dégradé la mise en production.
+sur un vrai runner. **Treize bugs** ont été corrigés au passage, dont quatre qui auraient
+bloqué ou dégradé la mise en production, et un introduit puis rattrapé en cours de
+reprise.
 
 Recette locale validée par Thibault le 2026-08-20. Tous les chantiers sont clos sauf le
 déploiement Coolify lui-même.
