@@ -1,6 +1,6 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-08-20_
+_Dernière mise à jour : 2026-08-21_
 
 ## Où on en est
 
@@ -17,6 +17,12 @@ reprise.
 
 Recette locale validée par Thibault le 2026-08-20. Tous les chantiers sont clos sauf le
 déploiement Coolify lui-même.
+
+Premier déploiement tenté le 2026-08-21 : échec sur `container mysql-... is unhealthy`,
+qui désigne la sonde alors que la cause est une variable `DB_ROOT_PASSWORD` vide.
+Diagnostic reproduit en local, guide complété, sonde simplifiée. **Il reste à renseigner
+les mots de passe côté Coolify et à relancer** : le compose de production, rejoué
+intégralement en local après correction, démarre et répond en 200.
 
 ## Chantiers
 
@@ -56,6 +62,7 @@ déploiement Coolify lui-même.
 | IFO-011 | Les appels hors Inertia jetaient le détail des erreurs 422 | L'utilisateur voyait « Une erreur est survenue. » sans savoir quoi corriger |
 | IFO-011 | `gte:start_week` comparait la longueur des chaînes, jamais les dates | Une plage de semaines inversée était acceptée en silence |
 | IFO-010 | Contraintes d'unicité posées en base sans règle `unique` applicative | Créer un doublon renvoyait une erreur 500 au lieu d'un message sous le champ (trouvé en recette) |
+| 2026-08-21 | La sonde MySQL portait le mot de passe root, sans utilité : `mysqladmin ping` renvoie 0 même sur « Access denied » | Secret exposé dans `docker inspect` et interpolation `${...}` superflue confiée au parseur de Coolify |
 
 `bulkPreview` a par ailleurs été restreint au local demandé : ce n'était pas un bug
 fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
@@ -74,15 +81,19 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 | Stack Docker locale | `/`, `/screen`, `/screen/data`, `/login` en 200 ; connexion admin OK ; CRUD vérifié en base |
 | Healthcheck du container | `healthy` (il échouait en permanence avant correction) |
 | Recette de l'écran public | Bonne période affichée, date en français, horloge, statut « ANNULÉ » rendu |
+| `docker-compose.coolify.yml` rejoué en local (2026-08-21) | MySQL `healthy`, application `healthy`, migrations passées, compte admin créé, `/`, `/screen` et `/login` en 200 |
 
 ## Prochaine action
 
-1. Relire et fusionner la [PR #1](https://github.com/opmvpc/ifosup-display/pull/1).
-2. Ouvrir IFO-002 : créer l'application et le service MySQL 8.4 sur Coolify, renseigner
-   les variables d'environnement (**`APP_KEY` généré pour la production, différent du
-   local**), monter les volumes `/app/storage/app` et `/app/storage/logs`, brancher le
-   domaine. Procédure complète : [`deploiement-coolify.md`](deploiement-coolify.md).
-3. Facultatif : ajouter `chore/**` et `feat/**` aux déclencheurs `push` des
+1. **Renseigner `DB_ROOT_PASSWORD`, `DB_PASSWORD` et `APP_KEY` dans Coolify** — de
+   vraies valeurs, pas des champs vidés — puis relancer le déploiement. C'est le seul
+   point qui bloque : le reste de la chaîne est vérifié.
+2. Si un conteneur MySQL a déjà démarré avec un autre mot de passe root, supprimer le
+   volume `ifosup-mysql` avant de relancer : ce mot de passe est figé à l'initialisation
+   de la base. Procédure et dépannage : [`deploiement-coolify.md`](deploiement-coolify.md).
+3. Dérouler ensuite les vérifications de la section 6 du guide (connexion admin, `/screen`
+   depuis une TV, persistance après redéploiement, sauvegarde planifiée).
+4. Facultatif : ajouter `chore/**` et `feat/**` aux déclencheurs `push` des
    workflows, pour obtenir un retour de CI sans devoir ouvrir une PR.
 
 ## Décisions métier rendues

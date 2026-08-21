@@ -35,10 +35,12 @@ Génération de la clé applicative :
 php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
 ```
 
-Laissées vides, elles ne produisent pas de démarrage silencieux : l'image MySQL refuse
-de démarrer (« You need to specify one of the following as an environment variable:
-MYSQL_ROOT_PASSWORD… ») et Laravel s'arrête sur « No application encryption key has been
-specified. »
+**Les laisser vides fait échouer le déploiement, mais sur un message trompeur** —
+`dependency failed to start: container mysql-... is unhealthy`. Ce n'est pas un problème
+de sonde : MySQL refuse de s'initialiser sans mot de passe root, `restart: unless-stopped`
+le relance en boucle, et Compose résume cet état par « unhealthy ». Voir
+[Dépannage](#7-dépannage) pour le détail. Vider un champ ne suffit donc pas : il faut y
+mettre une vraie valeur.
 
 Le compose les déclare volontairement sous la forme `${VAR}`, sans valeur par défaut.
 La forme `${VAR:?message}`, pourtant standard en Docker Compose pour signaler une
@@ -152,3 +154,39 @@ un déploiement raté.
 - [ ] Un import de planning aboutit sur un vrai fichier Excel de l'école
 - [ ] Après un redéploiement, un fichier importé est toujours présent
 - [ ] Une sauvegarde a été planifiée (section 4)
+
+## 7. Dépannage
+
+### `dependency failed to start: container mysql-... is unhealthy`
+
+Le message désigne la sonde, la cause est ailleurs : **`DB_ROOT_PASSWORD` est vide**
+(ou `DB_PASSWORD`). Reproduit à l'identique en local le 2026-08-21.
+
+Ce qui se passe réellement :
+
+1. MySQL refuse de s'initialiser sans mot de passe root et sort en erreur au bout d'une
+   seconde — « Database is uninitialized and password option is not specified ».
+2. `restart: unless-stopped` le relance aussitôt, en boucle.
+3. Compose, qui attend un conteneur sain, ne voit jamais ni `running` ni `exited` : il
+   résume ce va-et-vient par « is unhealthy » et abandonne au bout de ~3 s.
+
+Le signe qui ne trompe pas : l'échec survient **en trois secondes**, alors que la sonde
+laisse 30 s de `start_period` avant son premier contrôle. Une sonde réellement en échec
+mettrait au minimum une trentaine de secondes à faire tomber le déploiement.
+
+Pour confirmer côté serveur, les journaux du conteneur MySQL portent l'erreur en clair :
+
+```bash
+docker logs $(docker ps -a --filter name=mysql --format '{{.Names}}' | head -1) 2>&1 | tail -20
+```
+
+Correctif : renseigner `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans Coolify, puis redéployer.
+Si un conteneur MySQL a déjà tourné avec un autre mot de passe root, supprimer le volume
+`ifosup-mysql` avant de relancer : le mot de passe root est figé à l'initialisation de la
+base et ne change pas en modifiant la variable ensuite.
+
+### Le déploiement réussit mais l'application renvoie une erreur 500
+
+Regarder d'abord `APP_KEY` : Laravel s'arrête sur « No application encryption key has
+been specified. » Le conteneur applicatif démarre malgré tout, contrairement à MySQL,
+d'où un échec plus tardif et plus discret.

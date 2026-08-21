@@ -82,7 +82,13 @@ services:
     healthcheck:
       # L'application attend cet état avant de migrer : sans lui, le premier
       # déploiement démarrerait avant que la base accepte les connexions.
-      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-p${DB_ROOT_PASSWORD}']
+      #
+      # Sans identifiants, délibérément : `mysqladmin ping` renvoie 0 dès que le serveur
+      # répond, y compris sur un « Access denied » (vérifié). Le mot de passe qui figurait
+      # ici n'apportait donc rien à la sonde, mais il apparaissait en clair dans
+      # `docker inspect` et ajoutait une interpolation `${...}` de plus à faire traverser
+      # au parseur de Coolify. Un serveur éteint fait bien échouer la sonde (exit 1).
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1']
       interval: 5s
       timeout: 5s
       retries: 20

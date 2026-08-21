@@ -5,7 +5,7 @@ statut: ouvert
 priorité: haute
 dépend-de: [IFO-001]
 créé: 2026-08-18
-mis-à-jour: 2026-08-18
+mis-à-jour: 2026-08-21
 ---
 
 ## Contexte
@@ -43,6 +43,14 @@ charge autrement (procédure de dump dans le guide).
 - 2026-08-20 — procédure réécrite. La base rejoint le compose : plus de ressource MySQL
   séparée, plus de volumes à déclarer à la main. Le nombre de variables à saisir tombe à
   trois obligatoires (plus deux pour le premier démarrage), tout le reste ayant une
-  valeur par défaut adaptée à la production. Le compose refuse de démarrer si l'une des
-  trois manque.
+  valeur par défaut adaptée à la production.
+- 2026-08-21 — **premier déploiement tenté, échoué sur `container mysql-... is
+  unhealthy`.** Cause réelle : `DB_ROOT_PASSWORD` vide. MySQL refuse de s'initialiser,
+  `restart: unless-stopped` le relance en boucle, et Compose résume cet état par
+  « unhealthy ». Reproduit à l'identique en local. Le guide gagne une section
+  « Dépannage » qui traduit le message, et la sonde MySQL perd son mot de passe —
+  inutile (`mysqladmin ping` renvoie 0 même sur « Access denied ») et exposé dans
+  `docker inspect`. Le compose complet a été rejoué en local après correction :
+  base saine, application en 200. Reste à renseigner les variables côté Coolify et
+  à relancer.
 
