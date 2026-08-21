@@ -26,7 +26,9 @@ services:
       - APP_ENV=${APP_ENV:-production}
       - APP_KEY=${APP_KEY:?APP_KEY doit etre defini dans Coolify}
       - APP_DEBUG=${APP_DEBUG:-false}
-      - APP_URL=${SERVICE_FQDN_APP_80}
+      # Coolify renseigne SERVICE_FQDN_APP_80 avec le domaine attribué. Définir
+      # APP_URL manuellement prend le dessus, utile derrière un proxy tiers.
+      - APP_URL=${APP_URL:-${SERVICE_FQDN_APP_80:-}}
       - APP_LOCALE=${APP_LOCALE:-fr}
       - APP_FALLBACK_LOCALE=${APP_FALLBACK_LOCALE:-fr}
       - APP_SCREEN_TIMEZONE=${APP_SCREEN_TIMEZONE:-Europe/Brussels}
@@ -46,7 +48,9 @@ services:
       - BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-log}
       - FILESYSTEM_DISK=${FILESYSTEM_DISK:-local}
       - MAIL_MAILER=${MAIL_MAILER:-log}
-      # Compte administrateur créé au tout premier démarrage, si la base est vide.
+      # Compte administrateur créé au tout premier démarrage, uniquement si la table
+      # `users` est vide. Indispensables au premier déploiement : sans eux, aucun compte
+      # n'existe et personne ne peut se connecter. Sans effet ensuite.
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
     volumes:
