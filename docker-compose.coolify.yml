@@ -37,8 +37,10 @@ services:
       - APP_LOCALE=${APP_LOCALE:-fr}
       - APP_FALLBACK_LOCALE=${APP_FALLBACK_LOCALE:-fr}
       - APP_SCREEN_TIMEZONE=${APP_SCREEN_TIMEZONE:-Europe/Brussels}
-      - LOG_CHANNEL=${LOG_CHANNEL:-stack}
-      - LOG_STACK=${LOG_STACK:-single}
+      # stderr plutôt que le fichier single : les erreurs applicatives deviennent
+      # visibles dans `docker logs` et l'onglet Logs de Coolify, et aucun fichier
+      # ne grossit sans rotation sur le volume ifosup-logs.
+      - LOG_CHANNEL=${LOG_CHANNEL:-stderr}
       - LOG_LEVEL=${LOG_LEVEL:-warning}
       - DB_CONNECTION=mysql
       - DB_HOST=mysql
@@ -48,6 +50,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - SESSION_DRIVER=${SESSION_DRIVER:-database}
       - SESSION_LIFETIME=${SESSION_LIFETIME:-120}
+      # Le site n'est servi qu'en HTTPS derrière le proxy Coolify : le cookie de
+      # session ne doit jamais partir sur une requête HTTP forcée.
+      - SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-true}
       - CACHE_STORE=${CACHE_STORE:-database}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-database}
       - BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-log}

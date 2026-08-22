@@ -51,7 +51,9 @@ services:
       MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "${DB_HOST_PORT:-33063}:3306"
+      # Loopback uniquement : identifiants de développement connus, la base ne
+      # doit pas être joignable depuis le reste du réseau local.
+      - "127.0.0.1:${DB_HOST_PORT:-33063}:3306"
     volumes:
       - mysql-dev-data:/var/lib/mysql
     healthcheck:

@@ -27,7 +27,9 @@ services:
       MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "33061:3306"
+      # Loopback uniquement : identifiants de développement connus (root/root),
+      # la base ne doit pas être joignable depuis le reste du réseau local.
+      - "127.0.0.1:33061:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

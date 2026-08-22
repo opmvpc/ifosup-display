@@ -38,6 +38,12 @@ FROM dunglas/frankenphp:php8.4-bookworm
 
 RUN install-php-extensions pdo_mysql bcmath gd zip intl pcntl opcache
 
+# L'image de base ne charge AUCUN php.ini : PHP retombe sur ses valeurs compilées
+# (upload 2 Mo, mémoire 128 Mo), incompatibles avec les uploads de slides et
+# d'imports Excel. On active la config production, puis nos limites par-dessus.
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+COPY docker/php.ini "$PHP_INI_DIR/conf.d/99-ifosup.ini"
+
 WORKDIR /app
 
 # Code + vendor + assets compilés (sans node_modules ni .env)
@@ -58,8 +64,10 @@ EXPOSE 80
 # L'image FrankenPHP de base teste l'API d'admin de Caddy sur le port 2019, que le
 # Caddyfile du projet désactive (`admin off`) : ce contrôle échouait donc en
 # permanence et laissait le container « unhealthy », ce qu'un orchestrateur peut
-# interpréter comme un déploiement raté. On interroge l'application à la place.
+# interpréter comme un déploiement raté. On interroge l'application à la place,
+# sur `/up` (health check Laravel) : contrairement à `/`, il ne traverse pas le
+# groupe `web` et n'écrit donc pas une ligne de session en base à chaque sonde.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -fsS "http://127.0.0.1:${PORT}/" -o /dev/null || exit 1
+    CMD curl -fsS "http://127.0.0.1:${PORT}/up" -o /dev/null || exit 1
 
 ENTRYPOINT ["/start-container.sh"]

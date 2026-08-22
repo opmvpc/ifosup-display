@@ -8,6 +8,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 
 RUN install-php-extensions pdo_mysql bcmath gd zip intl pcntl opcache xdebug
 
+# Mêmes limites PHP qu'en production (upload de slides et d'Excel > 2 Mo),
+# sur la base development pour garder l'affichage des erreurs.
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+COPY docker/php.ini "$PHP_INI_DIR/conf.d/99-ifosup.ini"
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
