@@ -4,8 +4,20 @@ set -e
 cd /app
 
 if [ ! -f .env ]; then
-  echo "!! .env manquant dans le repo — copie depuis .env.example"
+  echo "!! .env manquant dans le repo — copie depuis .env.example, adaptée au MySQL de la stack"
   cp .env.example .env
+  # ADR-001 : le développement se fait sur MySQL, comme la production. L'exemple
+  # du starter kit pointe sur SQLite, ce qui laissait le MySQL de la stack tourner
+  # à vide — et masquait les bugs propres à MySQL (cf. IFO-006).
+  # On ne touche qu'au .env créé ici : un .env existant reste tel quel.
+  sed -i \
+    -e 's/^DB_CONNECTION=sqlite$/DB_CONNECTION=mysql/' \
+    -e 's/^# DB_HOST=127\.0\.0\.1$/DB_HOST=mysql/' \
+    -e 's/^# DB_PORT=3306$/DB_PORT=3306/' \
+    -e 's/^# DB_DATABASE=laravel$/DB_DATABASE=ifosup_display/' \
+    -e 's/^# DB_USERNAME=root$/DB_USERNAME=ifosup/' \
+    -e 's/^# DB_PASSWORD=$/DB_PASSWORD=secret/' \
+    .env
 fi
 
 if [ ! -d vendor ]; then

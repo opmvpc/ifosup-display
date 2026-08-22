@@ -1,5 +1,10 @@
 # Stack "prod-like" : on construit exactement l'image qui partira sur Coolify.
 # Usage : docker compose up -d --build   ->  http://localhost:8080
+
+# Nom de projet explicite : sans lui, les deux stacks locales dérivent le même nom
+# du dossier et leurs conteneurs se marchent dessus quand on les lance ensemble.
+name: ifosup-display-local
+
 services:
   app:
     build:

@@ -27,7 +27,8 @@ services:
     environment:
       # Coolify remplace cette valeur par le domaine attribué à l'application.
       - SERVICE_FQDN_APP_80
-      - APP_NAME=${APP_NAME:-Ifosup Display}
+      # Pas d'APP_NAME : le nom est en dur dans config/app.php, l'interface de
+      # Coolify refusant les valeurs contenant des espaces.
       - APP_ENV=${APP_ENV:-production}
       - APP_KEY=${APP_KEY}
       - APP_DEBUG=${APP_DEBUG:-false}

@@ -2,10 +2,23 @@
 
 set -e
 
-# S'assurer que les dossiers montés en volume sont accessibles à PHP
-mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views \
-         storage/logs storage/app/public bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache || true
+# Démarrage en deux temps : root prépare les volumes (dont les fichiers écrits
+# en root par d'anciennes versions de l'image), puis tout le reste — artisan
+# comme le serveur — tourne en www-data. Une compromission de l'application ne
+# donne ainsi plus root dans le conteneur. Le port 80 reste accessible grâce à
+# la capacité net_bind_service posée sur le binaire frankenphp (Dockerfile).
+if [ "$(id -u)" = "0" ]; then
+  mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views \
+           storage/logs storage/app/public bootstrap/cache
+  chown -R www-data:www-data storage bootstrap/cache || true
+
+  # Répertoires d'état de Caddy (XDG_CONFIG_HOME=/config, XDG_DATA_HOME=/data
+  # dans l'image de base).
+  mkdir -p /config /data
+  chown -R www-data:www-data /config /data || true
+
+  exec setpriv --reuid=www-data --regid=www-data --init-groups "$0" "$@"
+fi
 
 # Attendre que la base soit joignable (utile en compose / Coolify au 1er boot)
 if [ "${DB_CONNECTION:-sqlite}" != "sqlite" ]; then
