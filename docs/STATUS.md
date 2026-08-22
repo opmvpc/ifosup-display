@@ -26,8 +26,13 @@ prises corrigées dans la foulée (migration renommée qui ressuscitait une tabl
 bases pré-reprise, fusion de pivots dupliquant des lignes, uploads plafonnés à 2 Mo
 faute de `php.ini` dans l'image) plus trusted proxies, cookie `Secure`, garde-fous de
 suppression de comptes et logs visibles dans Coolify. Détail :
-[IFO-013](tickets/IFO-013-audit-croise-reprise.md). **Un redéploiement est nécessaire**
-pour bénéficier de ces correctifs (rien à changer dans l'interface Coolify).
+[IFO-013](tickets/IFO-013-audit-croise-reprise.md).
+
+**PR #4 fusionnée et redéployée le 2026-08-22 (~16h)** : déploiement Coolify
+`finished`, application `running:healthy`, vérifié depuis l'extérieur — routes en
+200, cookie de session `secure; httponly`, en-têtes de sécurité présents, balises
+OG en https, favicon et image de partage servis, « Nothing to migrate ». CI de
+main verte, y compris les nouveaux jobs `ci-mysql` et `docker-image`.
 
 Les pages du starter kit (settings, suppression de compte, confirmation de mot de
 passe, menu utilisateur) sont traduites en français
@@ -112,17 +117,14 @@ dans les variables).
 
 ## Prochaine action
 
-1. **Relire et fusionner la branche `chore/audit-croise-et-traductions`**, puis
-   **redéployer sur Coolify** : l'image doit être reconstruite (php.ini, non-root,
-   healthcheck `/up`, en-têtes) et l'environnement rechargé (`SESSION_SECURE_COOKIE`,
-   `LOG_CHANNEL=stderr`). Rien à changer dans l'interface Coolify.
-2. Dérouler les vérifications de la section 6 du guide (connexion admin, `/screen`
+1. Dérouler les vérifications de la section 6 du guide (connexion admin, `/screen`
    depuis une TV, persistance après redéploiement, sauvegarde planifiée) — la recette
    de production n'a pas encore été faite. Tester en particulier l'upload d'une vidéo
    de slide (> 2 Mo), cassé avant le correctif php.ini.
-3. Après le premier boot en production : vider `ADMIN_EMAIL`/`ADMIN_PASSWORD` dans
-   l'interface Coolify (reste assumé d'IFO-015).
-4. Facultatif : ajouter `chore/**` et `feat/**` aux déclencheurs `push` des
+2. Vider `ADMIN_EMAIL`/`ADMIN_PASSWORD` dans l'interface Coolify (reste assumé
+   d'IFO-015) — sans risque : la commande saute proprement l'étape quand les
+   variables sont vides ; ne les re-renseigner que si le volume MySQL repart de zéro.
+3. Facultatif : ajouter `chore/**` et `feat/**` aux déclencheurs `push` des
    workflows, pour obtenir un retour de CI sans devoir ouvrir une PR.
 
 ## Décisions métier rendues
