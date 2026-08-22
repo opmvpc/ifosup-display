@@ -44,16 +44,28 @@ return new class extends Migration
             $ids = DB::table('groups')->where('name', $name)->orderBy('id')->pluck('id');
             $canonical = $ids->shift();
 
+            // Réaffecter par insertion, pas par `update` : deux doublons liés au même
+            // cours produiraient deux lignes (course_id, canonical) identiques, que la
+            // pivot n'interdit pas.
             $alreadyLinked = DB::table('course_group')
                 ->where('group_id', $canonical)
                 ->pluck('course_id');
 
-            DB::table('course_group')
+            $toReattach = DB::table('course_group')
                 ->whereIn('group_id', $ids)
-                ->whereIn('course_id', $alreadyLinked)
-                ->delete();
+                ->distinct()
+                ->pluck('course_id')
+                ->diff($alreadyLinked);
 
-            DB::table('course_group')->whereIn('group_id', $ids)->update(['group_id' => $canonical]);
+            DB::table('course_group')->whereIn('group_id', $ids)->delete();
+
+            foreach ($toReattach as $courseId) {
+                DB::table('course_group')->insert([
+                    'group_id' => $canonical,
+                    'course_id' => $courseId,
+                ]);
+            }
+
             DB::table('groups')->whereIn('id', $ids)->delete();
         }
     }

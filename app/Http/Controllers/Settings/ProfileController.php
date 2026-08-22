@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,6 +48,14 @@ class ProfileController extends Controller
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        // L'inscription et la réinitialisation par e-mail sont désactivées :
+        // supprimer le dernier compte verrouillerait définitivement le backoffice.
+        if (User::count() <= 1) {
+            return back()->withErrors([
+                'password' => 'Impossible de supprimer le dernier compte : plus personne ne pourrait se connecter.',
+            ]);
+        }
 
         Auth::logout();
 

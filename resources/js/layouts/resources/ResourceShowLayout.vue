@@ -13,6 +13,7 @@ interface ResourceShowLayoutProps {
     description?: string;
     deletionWarning?: string;
     deletionConfirmationMessage?: string;
+    deletionBlockedReason?: string | null;
 }
 
 const props = withDefaults(defineProps<ResourceShowLayoutProps>(), {
@@ -76,10 +77,14 @@ const deleteResource = () => {
                                 <p
                                     class="text-sm text-gray-500 dark:text-gray-400"
                                 >
-                                    {{ props.deletionWarning }}
+                                    {{
+                                        props.deletionBlockedReason ??
+                                        props.deletionWarning
+                                    }}
                                 </p>
                             </div>
                             <Button
+                                v-if="!props.deletionBlockedReason"
                                 variant="destructive"
                                 @click="deleteResource"
                             >

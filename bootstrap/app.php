@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // L'application vit toujours derrière le proxy Coolify : sans cela,
+        // X-Forwarded-Proto est ignoré, $request->isSecure() vaut false et
+        // $request->ip() renvoie l'adresse du proxy pour tous les visiteurs.
+        $middleware->trustProxies(at: '*');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

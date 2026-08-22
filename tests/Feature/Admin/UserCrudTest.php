@@ -254,4 +254,24 @@ describe('destroy', function () {
         $response->assertRedirect(route('admin.users.index'));
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
     });
+
+    it('refuse de supprimer son propre compte via /admin/users', function () {
+        $me = actingAsUser();
+        User::factory()->create();
+
+        $response = $this->delete(route('admin.users.destroy', $me));
+
+        $response->assertRedirect(route('admin.users.show', $me));
+        $this->assertDatabaseHas('users', ['id' => $me->id]);
+    });
+
+    it('expose la raison du blocage sur la page show de son propre compte', function () {
+        $me = actingAsUser();
+        User::factory()->create();
+
+        $this->get(route('admin.users.show', $me))
+            ->assertInertia(fn (Assert $page) => $page->component('admin/users/Show')
+                ->whereNot('deletionBlockedReason', null)
+            );
+    });
 });
