@@ -21,6 +21,16 @@
 :{$PORT:80} {
     root * /app/public
 
+	# En-têtes de sécurité (audit croisé 2026-08-22, IFO-015). Le HSTS n'a d'effet
+	# que via le proxy HTTPS de Coolify : les navigateurs l'ignorent en HTTP local.
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		Strict-Transport-Security "max-age=15552000"
+		-Server
+	}
+
 	encode zstd br gzip
 
 	file_server {

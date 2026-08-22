@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class ScreenSlide extends Model
@@ -67,17 +68,28 @@ class ScreenSlide extends Model
             return;
         }
 
-        self::query()->create([
-            'type' => self::TYPE_WELCOME,
-            'position' => 0,
-            'is_locked' => true,
-        ]);
+        // Appelée par l'endpoint public /screen/data : sans verrou, des requêtes
+        // simultanées sur une table vide passaient toutes le `exists()` et créaient
+        // les slides par défaut en plusieurs exemplaires. Le verrou du cache
+        // (table cache_locks) fonctionne à l'identique sur MySQL et SQLite ; si le
+        // verrou est déjà pris, on laisse son détenteur créer les slides.
+        Cache::lock('screen-slides:ensure-defaults', 10)->get(function (): void {
+            if (self::query()->exists()) {
+                return;
+            }
 
-        self::query()->create([
-            'type' => self::TYPE_SCHEDULE,
-            'position' => 1,
-            'is_locked' => false,
-        ]);
+            self::query()->create([
+                'type' => self::TYPE_WELCOME,
+                'position' => 0,
+                'is_locked' => true,
+            ]);
+
+            self::query()->create([
+                'type' => self::TYPE_SCHEDULE,
+                'position' => 1,
+                'is_locked' => false,
+            ]);
+        });
     }
 
     /**

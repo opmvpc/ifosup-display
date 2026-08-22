@@ -32,6 +32,49 @@ class SchedulerImportController extends Controller
     }
 
     /**
+     * Clé de correspondance des noms de locaux et codes de cours.
+     *
+     * MySQL compare les chaînes sans tenir compte de la casse (utf8mb4_unicode_ci),
+     * les tableaux PHP oui : sans clé commune, « SALLE A » passait pour un nouveau
+     * local alors que « Salle A » existe (création → violation d'unicité → 500), et
+     * les lignes d'un cours « abc » étaient ignorées en silence face à « ABC ».
+     * Toutes les correspondances passent par cette clé ; la casse d'origine ne sert
+     * qu'à l'affichage et à la création.
+     */
+    private function matchKey(string $name): string
+    {
+        return mb_strtolower(trim($name));
+    }
+
+    /**
+     * Un classeur corrompu, une cellule de date malformée ou une formule que
+     * PhpSpreadsheet ne digère pas levaient un 500 brut : l'utilisateur doit
+     * savoir que c'est son fichier qui est en cause, et pouvoir en téléverser
+     * un autre.
+     */
+    private function unreadableFileResponse(): JsonResponse
+    {
+        return response()->json([
+            'error' => "Le fichier n'a pas pu être lu. Vérifiez qu'il s'agit bien d'un planning au format attendu, ou réexportez-le depuis Excel.",
+        ], 422);
+    }
+
+    /**
+     * Table de correspondance clé normalisée → id, à partir d'un pluck('id', nom).
+     * Les tables sont petites (quelques dizaines de locaux, quelques centaines de
+     * cours) : on charge tout plutôt que de dépendre de la collation du moteur SQL.
+     */
+    private function keyedByMatchKey(iterable $idsByName): array
+    {
+        $byKey = [];
+        foreach ($idsByName as $name => $id) {
+            $byKey[$this->matchKey((string) $name)] ??= $id;
+        }
+
+        return $byKey;
+    }
+
+    /**
      * Returns the stored file path if it still exists on disk, or null.
      * Also cleans up stale session entries.
      */
@@ -105,7 +148,14 @@ class SchedulerImportController extends Controller
 
         $startYear = $request->session()->get($this->sessionYearKey(), (int) now()->year);
         $absolutePath = Storage::path($path);
-        $parsed = $this->parser->parse($absolutePath, $startYear);
+
+        try {
+            $parsed = $this->parser->parse($absolutePath, $startYear);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->unreadableFileResponse();
+        }
 
         // Date range
         $allDates = array_column($parsed, 'date');
@@ -119,22 +169,33 @@ class SchedulerImportController extends Controller
         $localNames = array_values(array_unique(array_column($parsed, 'local')));
         $courseCodes = array_values(array_unique(array_column($parsed, 'course')));
 
-        $roomsByName = Room::whereIn('name', $localNames)->pluck('id', 'name');
-        $coursesInDb = Course::whereIn('code', $courseCodes)->get(['code', 'name']);
-        $coursesByCode = $coursesInDb->pluck('id', 'code');
+        $roomsByKey = $this->keyedByMatchKey(Room::pluck('id', 'name'));
 
-        $existingRooms = array_keys($roomsByName->toArray());
+        // Les listes affichées gardent la casse du fichier : c'est elle que le
+        // frontend renvoie dans selected_rooms / selected_courses.
+        $existingRooms = array_values(array_filter(
+            $localNames,
+            fn (string $name) => isset($roomsByKey[$this->matchKey($name)]),
+        ));
         $newRooms = array_values(array_diff($localNames, $existingRooms));
         $allRooms = array_merge($existingRooms, $newRooms);
 
-        $knownCourseCodes = $coursesInDb->pluck('code')->all();
-        $knownCourses = $coursesInDb->map(fn ($c) => ['code' => $c->code, 'name' => $c->name])->values()->all();
-        $unknownCourses = array_values(array_diff($courseCodes, $knownCourseCodes));
+        $fileCourseKeys = array_flip(array_map($this->matchKey(...), $courseCodes));
+        $coursesInDb = Course::get(['code', 'name'])
+            ->filter(fn ($c) => isset($fileCourseKeys[$this->matchKey($c->code)]))
+            ->values();
+
+        $knownCourseKeys = array_flip($coursesInDb->map(fn ($c) => $this->matchKey($c->code))->all());
+        $knownCourses = $coursesInDb->map(fn ($c) => ['code' => $c->code, 'name' => $c->name])->all();
+        $unknownCourses = array_values(array_filter(
+            $courseCodes,
+            fn (string $code) => ! isset($knownCourseKeys[$this->matchKey($code)]),
+        ));
 
         // Conflicts: date + period + room already occupied in DB (only existing rooms)
         $conflicts = [];
         foreach ($parsed as $entry) {
-            $roomId = $roomsByName[$entry['local']] ?? null;
+            $roomId = $roomsByKey[$this->matchKey($entry['local'])] ?? null;
             if (! $roomId) {
                 continue; // new room → no conflict possible
             }
@@ -145,7 +206,9 @@ class SchedulerImportController extends Controller
                 ->with('course')
                 ->first();
 
-            if ($existing && $existing->course?->code !== $entry['course']) {
+            $existingCode = $existing?->course?->code;
+
+            if ($existing && ($existingCode === null || $this->matchKey($existingCode) !== $this->matchKey($entry['course']))) {
                 $conflicts[] = [
                     'date' => $entry['date'],
                     'period' => $entry['period'],
@@ -234,7 +297,14 @@ class SchedulerImportController extends Controller
 
         $startYear = $request->session()->get($this->sessionYearKey(), (int) now()->year);
         $absolutePath = Storage::path($path);
-        $parsed = $this->parser->parse($absolutePath, $startYear);
+
+        try {
+            $parsed = $this->parser->parse($absolutePath, $startYear);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->unreadableFileResponse();
+        }
 
         $selectedRooms = $request->input('selected_rooms');
         $selectedCourses = $request->input('selected_courses');
@@ -258,22 +328,34 @@ class SchedulerImportController extends Controller
                 }
 
                 // Create rooms that don't exist yet (only those selected)
-                $rooms = Room::whereIn('name', $selectedRooms)->pluck('id', 'name')->toArray();
+                $roomsByKey = $this->keyedByMatchKey(Room::pluck('id', 'name'));
+                $selectedRoomKeys = [];
                 foreach ($selectedRooms as $roomName) {
-                    if (! isset($rooms[$roomName])) {
-                        $room = Room::create(['name' => $roomName]);
-                        $rooms[$roomName] = $room->id;
+                    $key = $this->matchKey($roomName);
+                    $selectedRoomKeys[$key] = true;
+
+                    if (! isset($roomsByKey[$key])) {
+                        $room = Room::create(['name' => trim($roomName)]);
+                        $roomsByKey[$key] = $room->id;
                     }
                 }
 
-                $courses = Course::whereIn('code', $selectedCourses)->pluck('id', 'code');
+                $coursesByKey = $this->keyedByMatchKey(Course::pluck('id', 'code'));
+                $selectedCourseKeys = array_flip(array_map($this->matchKey(...), $selectedCourses));
 
                 $imported = 0;
                 $replaced = 0;
 
                 foreach ($parsed as $entry) {
-                    $roomId = $rooms[$entry['local']] ?? null;
-                    $courseId = $courses[$entry['course']] ?? null;
+                    $localKey = $this->matchKey($entry['local']);
+                    $courseKey = $this->matchKey($entry['course']);
+
+                    if (! isset($selectedRoomKeys[$localKey]) || ! isset($selectedCourseKeys[$courseKey])) {
+                        continue;
+                    }
+
+                    $roomId = $roomsByKey[$localKey] ?? null;
+                    $courseId = $coursesByKey[$courseKey] ?? null;
 
                     if (! $roomId || ! $courseId) {
                         continue;

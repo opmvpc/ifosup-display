@@ -21,7 +21,7 @@ defineProps<Props>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
-        title: 'Profile settings',
+        title: 'Paramètres du profil',
         href: edit(),
     },
 ];
@@ -32,16 +32,16 @@ const user = computed(() => page.props.auth.user);
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbItems">
-        <Head title="Profile settings" />
+        <Head title="Paramètres du profil" />
 
-        <h1 class="sr-only">Profile settings</h1>
+        <h1 class="sr-only">Paramètres du profil</h1>
 
         <SettingsLayout>
             <div class="flex flex-col space-y-6">
                 <Heading
                     variant="small"
-                    title="Profile information"
-                    description="Update your name and email address"
+                    title="Informations du profil"
+                    description="Modifiez votre nom et votre adresse email"
                 />
 
                 <Form
@@ -50,7 +50,7 @@ const user = computed(() => page.props.auth.user);
                     v-slot="{ errors, processing, recentlySuccessful }"
                 >
                     <div class="grid gap-2">
-                        <Label for="name">Name</Label>
+                        <Label for="name">Nom</Label>
                         <Input
                             id="name"
                             class="mt-1 block w-full"
@@ -58,13 +58,13 @@ const user = computed(() => page.props.auth.user);
                             :default-value="user.name"
                             required
                             autocomplete="name"
-                            placeholder="Full name"
+                            placeholder="Nom complet"
                         />
                         <InputError class="mt-2" :message="errors.name" />
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="email">Email address</Label>
+                        <Label for="email">Adresse email</Label>
                         <Input
                             id="email"
                             type="email"
@@ -73,7 +73,7 @@ const user = computed(() => page.props.auth.user);
                             :default-value="user.email"
                             required
                             autocomplete="username"
-                            placeholder="Email address"
+                            placeholder="Adresse email"
                         />
                         <InputError class="mt-2" :message="errors.email" />
                     </div>
@@ -82,7 +82,7 @@ const user = computed(() => page.props.auth.user);
                         <Button
                             :disabled="processing"
                             data-test="update-profile-button"
-                            >Save</Button
+                            >Enregistrer</Button
                         >
 
                         <Transition
@@ -95,7 +95,7 @@ const user = computed(() => page.props.auth.user);
                                 v-show="recentlySuccessful"
                                 class="text-sm text-neutral-600"
                             >
-                                Saved.
+                                Enregistré.
                             </p>
                         </Transition>
                     </div>

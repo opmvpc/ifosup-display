@@ -19,7 +19,10 @@ class SchedulerSheetParser
     {
         ini_set('memory_limit', '512M');
 
-        $spreadsheet = IOFactory::load($absolutePath);
+        // Lecteurs restreints aux formats annoncés par la validation d'upload :
+        // sans cela, IOFactory retombe sur son lecteur CSV, qui « lit » n'importe
+        // quel fichier et produit un planning vide au lieu d'une erreur franche.
+        $spreadsheet = IOFactory::load($absolutePath, 0, [IOFactory::READER_XLSX, IOFactory::READER_XLS]);
         $allAttributions = [];
 
         foreach ($spreadsheet->getAllSheets() as $sheet) {

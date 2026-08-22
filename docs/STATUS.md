@@ -1,6 +1,6 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-08-21_
+_Dernière mise à jour : 2026-08-22_
 
 ## Où on en est
 
@@ -9,20 +9,29 @@ Projet de stage repris par l'école. Le code métier est fonctionnel et bien str
 Excel, écran public `/screen`).
 
 La reprise en main est faite : le projet tourne en Docker en local sur l'image exacte
-qui partira en production, le style est à niveau, **273 tests couvrent le métier** et
+qui partira en production, le style est à niveau, **284 tests couvrent le métier** et
 les deux workflows GitHub Actions vérifient réellement quelque chose — ils sont verts
-sur un vrai runner. **Treize bugs** ont été corrigés au passage, dont quatre qui auraient
+sur un vrai runner. **Quatorze bugs** ont été corrigés au passage, dont quatre qui auraient
 bloqué ou dégradé la mise en production, et un introduit puis rattrapé en cours de
 reprise.
 
-Recette locale validée par Thibault le 2026-08-20. Tous les chantiers sont clos sauf le
-déploiement Coolify lui-même.
+Recette locale validée par Thibault le 2026-08-20. Seule reste ouverte la recette de
+production (IFO-002), attendue pour les premiers tests réels de lundi.
 
-Premier déploiement tenté le 2026-08-21 : échec sur `container mysql-... is unhealthy`,
-qui désigne la sonde alors que la cause est une variable `DB_ROOT_PASSWORD` vide.
-Diagnostic reproduit en local, guide complété, sonde simplifiée. **Il reste à renseigner
-les mots de passe côté Coolify et à relancer** : le compose de production, rejoué
-intégralement en local après correction, démarre et répond en 200.
+Le site est **en production sur le Coolify de l'école** depuis le 2026-08-21/22 (recette
+complète encore à dérouler). Le 2026-08-22, un **audit croisé multi-modèles** (deux
+agents Fable, un Opus, un Codex GPT-5.6 Sol) a contre-vérifié la reprise : verdict
+**fiable**, chaque fix revendiqué est réel, aucune régression majeure. Trois vraies
+prises corrigées dans la foulée (migration renommée qui ressuscitait une table sur les
+bases pré-reprise, fusion de pivots dupliquant des lignes, uploads plafonnés à 2 Mo
+faute de `php.ini` dans l'image) plus trusted proxies, cookie `Secure`, garde-fous de
+suppression de comptes et logs visibles dans Coolify. Détail :
+[IFO-013](tickets/IFO-013-audit-croise-reprise.md). **Un redéploiement est nécessaire**
+pour bénéficier de ces correctifs (rien à changer dans l'interface Coolify).
+
+Les pages du starter kit (settings, suppression de compte, confirmation de mot de
+passe, menu utilisateur) sont traduites en français
+([IFO-012](tickets/IFO-012-traduction-fr-starter-kit.md)).
 
 ## Chantiers
 
@@ -39,6 +48,11 @@ intégralement en local après correction, démarre et répond en 200.
 | [IFO-009](tickets/IFO-009-import-sans-transaction.md) | Import de planning hors transaction | terminé |
 | [IFO-010](tickets/IFO-010-contraintes-unicite.md) | Contraintes d'unicité manquantes en base | terminé |
 | [IFO-011](tickets/IFO-011-messages-de-validation.md) | Messages de validation et erreurs 422 | terminé |
+| [IFO-012](tickets/IFO-012-traduction-fr-starter-kit.md) | Traduction française du starter kit | terminé |
+| [IFO-013](tickets/IFO-013-audit-croise-reprise.md) | Audit croisé de la reprise (multi-modèles) | terminé |
+| [IFO-014](tickets/IFO-014-import-sensible-casse.md) | Import Excel sensible à la casse (500 / lignes ignorées) | terminé |
+| [IFO-015](tickets/IFO-015-durcissements-differes.md) | Durcissements de l'audit croisé (12/14, deux restes assumés) | terminé |
+| [IFO-016](tickets/IFO-016-favicon-og-appname.md) | Favicon de marque, carte OG, nom d'application en dur | terminé |
 
 ## Décisions
 
@@ -71,7 +85,7 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 
 | Vérification | Résultat |
 |---|---|
-| `php artisan test` | **273 passés**, 7 ignorés (2FA), 0 échec — 1080 assertions |
+| `php artisan test` | **284 passés**, 0 ignoré (reliquats 2FA supprimés), 0 échec — 1133 assertions |
 | `composer lint:check` | PASS, 145 fichiers |
 | `pnpm format:check` | PASS |
 | `pnpm lint:check` | 0 erreur |
@@ -82,17 +96,32 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 | Healthcheck du container | `healthy` (il échouait en permanence avant correction) |
 | Recette de l'écran public | Bonne période affichée, date en français, horloge, statut « ANNULÉ » rendu |
 | `docker-compose.coolify.yml` rejoué en local (2026-08-21) | MySQL `healthy`, application `healthy`, migrations passées, compte admin créé, `/`, `/screen` et `/login` en 200 |
+| Image reconstruite après l'audit, rejouée en local (2026-08-22) | `healthy` (sonde `/up`), toutes les routes en 200, migrations (dont les deux corrigées) passées sur MySQL, `php.ini` chargé : upload 300M / post 310M / mémoire 512M |
+| Image non-root rejouée en local (2026-08-22, IFO-015) | PID 1 = frankenphp en `www-data`, routes en 200, en-têtes de sécurité présents, écritures `storage` OK sur des volumes contenant des fichiers créés en root |
+
+La seconde vague du 2026-08-22 (demande de Thibault, tests réels prévus lundi) a
+ensuite tout soldé : [IFO-014](tickets/IFO-014-import-sensible-casse.md) (import
+insensible à la casse), [IFO-015](tickets/IFO-015-durcissements-differes.md)
+(12 durcissements sur 14 : conteneur non-root, en-têtes de sécurité, throttle et
+sérialisation de l'écran public, invalidation des sessions, verrou des slides par
+défaut, 422 sur course de créneau, suppression des reliquats 2FA, CI MySQL + build
+d'image, stacks locales assainies) et
+[IFO-016](tickets/IFO-016-favicon-og-appname.md) (favicon de marque, carte de
+partage OG, nom d'application en dur — l'interface Coolify refusant les espaces
+dans les variables).
 
 ## Prochaine action
 
-1. **Renseigner `DB_ROOT_PASSWORD`, `DB_PASSWORD` et `APP_KEY` dans Coolify** — de
-   vraies valeurs, pas des champs vidés — puis relancer le déploiement. C'est le seul
-   point qui bloque : le reste de la chaîne est vérifié.
-2. Si un conteneur MySQL a déjà démarré avec un autre mot de passe root, supprimer le
-   volume `ifosup-mysql` avant de relancer : ce mot de passe est figé à l'initialisation
-   de la base. Procédure et dépannage : [`deploiement-coolify.md`](deploiement-coolify.md).
-3. Dérouler ensuite les vérifications de la section 6 du guide (connexion admin, `/screen`
-   depuis une TV, persistance après redéploiement, sauvegarde planifiée).
+1. **Relire et fusionner la branche `chore/audit-croise-et-traductions`**, puis
+   **redéployer sur Coolify** : l'image doit être reconstruite (php.ini, non-root,
+   healthcheck `/up`, en-têtes) et l'environnement rechargé (`SESSION_SECURE_COOKIE`,
+   `LOG_CHANNEL=stderr`). Rien à changer dans l'interface Coolify.
+2. Dérouler les vérifications de la section 6 du guide (connexion admin, `/screen`
+   depuis une TV, persistance après redéploiement, sauvegarde planifiée) — la recette
+   de production n'a pas encore été faite. Tester en particulier l'upload d'une vidéo
+   de slide (> 2 Mo), cassé avant le correctif php.ini.
+3. Après le premier boot en production : vider `ADMIN_EMAIL`/`ADMIN_PASSWORD` dans
+   l'interface Coolify (reste assumé d'IFO-015).
 4. Facultatif : ajouter `chore/**` et `feat/**` aux déclencheurs `push` des
    workflows, pour obtenir un retour de CI sans devoir ouvrir une PR.
 

@@ -9,6 +9,11 @@
 # capte alors les requêtes avant le conteneur, avec des symptômes très déroutants.
 # Chacun reste surchargeable :
 #   APP_HOST_PORT=9000 VITE_HOST_PORT=5180 docker compose -f docker-compose.dev.yml up -d
+
+# Nom de projet explicite : sans lui, les deux stacks locales dérivent le même nom
+# du dossier et leurs conteneurs se marchent dessus quand on les lance ensemble.
+name: ifosup-display-dev
+
 services:
   app:
     build:
@@ -25,10 +30,24 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    # L'image de base FrankenPHP sonde l'API d'admin de Caddy, qui ne tourne pas ici
+    # (artisan serve) : sans cette sonde, le conteneur restait « unhealthy » à vie et
+    # vite ne pouvait pas attendre que l'installation des dépendances soit finie.
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8000/up']
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
 
   vite:
     image: ifosup-display:dev
     command: ["vite"]
+    # Neutralise la sonde héritée de l'image FrankenPHP (API d'admin de Caddy,
+    # qui ne tourne pas ici) : sans cela le conteneur s'affiche « unhealthy »
+    # alors que Vite sert normalement.
+    healthcheck:
+      disable: true
     environment:
       # Active le bloc `server` de vite.config.ts : écoute sur toutes les interfaces
       # tout en annonçant au navigateur le port réellement publié sur l'hôte.
@@ -41,7 +60,12 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - app
+      # `service_healthy`, pas juste « démarré » : au premier boot, app et vite
+      # lançaient chacun `composer install` sur le même volume et le perdant
+      # sortait en erreur. Attendre qu'app serve garantit que l'installation
+      # des dépendances est terminée.
+      app:
+        condition: service_healthy
 
   mysql:
     image: mysql:8.4
@@ -51,7 +75,9 @@ services:
       MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "${DB_HOST_PORT:-33063}:3306"
+      # Loopback uniquement : identifiants de développement connus, la base ne
+      # doit pas être joignable depuis le reste du réseau local.
+      - "127.0.0.1:${DB_HOST_PORT:-33063}:3306"
     volumes:
       - mysql-dev-data:/var/lib/mysql
     healthcheck:

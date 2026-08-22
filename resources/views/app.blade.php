@@ -30,11 +30,26 @@
             }
         </style>
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name') }}</title>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <meta name="theme-color" content="#1e2d55">
+
+        {{-- Carte de partage (application interne : pas de SEO, juste un lien propre).
+             Les visuels se régénèrent via scripts/generate-favicons.php et
+             scripts/generate-og-image.php. --}}
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ config('app.name') }}">
+        <meta property="og:title" content="{{ config('app.name') }}">
+        <meta property="og:description" content="Affichage dynamique des plannings de cours et annonces sur les écrans de l'IFOSUP Wavre.">
+        <meta property="og:url" content="{{ url('/') }}">
+        <meta property="og:image" content="{{ url('/og-image.png') }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:locale" content="fr_BE">
+        <meta name="twitter:card" content="summary_large_image">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />

@@ -27,22 +27,37 @@ COPY . .
 
 # artisan doit pouvoir booter pendant `pnpm build` (plugin Wayfinder).
 # On fournit un .env neutre + une clé jetable, jamais utilisés au runtime.
+# node_modules est supprimé ICI, dans le stage builder : le supprimer après le
+# COPY du stage final laissait ses ~centaines de Mo dans la couche copiée.
 RUN cp .env.example .env && \
     composer dump-autoload --optimize --no-dev && \
     php artisan key:generate --force && \
     pnpm build && \
-    rm -f .env
+    rm -f .env && \
+    rm -rf node_modules
 
 # --- Stage 2 : Image finale ---
 FROM dunglas/frankenphp:php8.4-bookworm
 
 RUN install-php-extensions pdo_mysql bcmath gd zip intl pcntl opcache
 
+# Le serveur tournera en www-data (voir docker-entrypoint.sh) : la capacité
+# net_bind_service permet à un process non-root d'écouter sur le port 80.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libcap2-bin && \
+    rm -rf /var/lib/apt/lists/* && \
+    setcap 'cap_net_bind_service=+ep' "$(command -v frankenphp)"
+
+# L'image de base ne charge AUCUN php.ini : PHP retombe sur ses valeurs compilées
+# (upload 2 Mo, mémoire 128 Mo), incompatibles avec les uploads de slides et
+# d'imports Excel. On active la config production, puis nos limites par-dessus.
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+COPY docker/php.ini "$PHP_INI_DIR/conf.d/99-ifosup.ini"
+
 WORKDIR /app
 
 # Code + vendor + assets compilés (sans node_modules ni .env)
 COPY --from=builder /app /app
-RUN rm -rf /app/node_modules
 
 RUN mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/public bootstrap/cache && \
     chown -R www-data:www-data storage bootstrap/cache
@@ -58,8 +73,10 @@ EXPOSE 80
 # L'image FrankenPHP de base teste l'API d'admin de Caddy sur le port 2019, que le
 # Caddyfile du projet désactive (`admin off`) : ce contrôle échouait donc en
 # permanence et laissait le container « unhealthy », ce qu'un orchestrateur peut
-# interpréter comme un déploiement raté. On interroge l'application à la place.
+# interpréter comme un déploiement raté. On interroge l'application à la place,
+# sur `/up` (health check Laravel) : contrairement à `/`, il ne traverse pas le
+# groupe `web` et n'écrit donc pas une ligne de session en base à chaque sonde.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -fsS "http://127.0.0.1:${PORT}/" -o /dev/null || exit 1
+    CMD curl -fsS "http://127.0.0.1:${PORT}/up" -o /dev/null || exit 1
 
 ENTRYPOINT ["/start-container.sh"]

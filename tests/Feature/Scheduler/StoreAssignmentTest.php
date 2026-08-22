@@ -235,3 +235,35 @@ it("retourne l'attribution créée avec ses relations course et room chargées",
     $response->assertJsonPath('assignment.course.id', $course->id);
     $response->assertJsonPath('assignment.room.id', $room->id);
 });
+
+it('répond 422 « créneau occupé » quand une écriture concurrente gagne la course (IFO-015)', function () {
+    actingAsUser();
+    $course = Course::factory()->create();
+    $other = Course::factory()->create();
+    $room = Room::factory()->create();
+
+    // Simule le concurrent : il insère le même créneau APRÈS le contrôle
+    // slotIsOccupied du contrôleur, juste avant l'insertion réelle.
+    Assignment::creating(function () use ($room, $other): void {
+        DB::table('assignments')->insert([
+            'course_id' => $other->id,
+            'room_id' => $room->id,
+            'date' => '2026-09-01',
+            'period' => 'morning',
+            'status' => 'planned',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    });
+
+    $response = $this->postJson(route('schedule.assignments.store'), [
+        'course_id' => $course->id,
+        'room_id' => $room->id,
+        'date' => '2026-09-01',
+        'period' => 'morning',
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonPath('message', 'Ce créneau est déjà occupé.');
+    expect(Assignment::count())->toBe(1);
+});

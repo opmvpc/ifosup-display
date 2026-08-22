@@ -6,6 +6,7 @@ import ResourceShowLayout from '@/layouts/resources/ResourceShowLayout.vue';
 
 const props = defineProps<{
     user: { id: number; name: string; email: string; created_at: string };
+    deletionBlockedReason?: string | null;
 }>();
 
 const routes = useResourceRoutes(props.user.id, actions);
@@ -19,6 +20,7 @@ const routes = useResourceRoutes(props.user.id, actions);
         :routes="routes"
         deletion-warning="Supprimer définitivement ce compte utilisateur."
         deletion-confirmation-message="Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible."
+        :deletion-blocked-reason="props.deletionBlockedReason"
     >
         <section
             class="overflow-hidden rounded-2xl border border-sidebar-border/60 bg-linear-to-br from-zinc-100 via-card to-zinc-200/60 dark:from-zinc-900 dark:via-zinc-900/90 dark:to-zinc-800/50"

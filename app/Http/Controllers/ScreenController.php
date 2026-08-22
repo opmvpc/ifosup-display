@@ -69,7 +69,28 @@ class ScreenController extends Controller
                 return [
                     'key' => $periodKey,
                     'title' => self::PERIOD_LABELS[$periodKey],
-                    'rows' => $assignmentsByPeriod->get($periodKey, collect())->values(),
+                    // Uniquement les champs consommés par ScheduleSlide.vue : l'endpoint
+                    // est public, inutile d'y exposer les modèles entiers (ids de
+                    // relations, timestamps).
+                    'rows' => $assignmentsByPeriod->get($periodKey, collect())
+                        ->map(fn (Assignment $assignment) => [
+                            'id' => $assignment->id,
+                            'status' => $assignment->status,
+                            'course' => $assignment->course === null ? null : [
+                                'code' => $assignment->course->code,
+                                'name' => $assignment->course->name,
+                                'teacher' => $assignment->course->teacher === null ? null : [
+                                    'name' => $assignment->course->teacher->name,
+                                ],
+                                'groups' => $assignment->course->groups
+                                    ->map(fn ($group) => ['name' => $group->name])
+                                    ->values(),
+                            ],
+                            'room' => $assignment->room === null ? null : [
+                                'name' => $assignment->room->name,
+                            ],
+                        ])
+                        ->values(),
                 ];
             })
             ->values();
