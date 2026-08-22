@@ -1,7 +1,7 @@
 ---
 id: IFO-015
 titre: Durcissements différés issus de l'audit croisé
-statut: ouvert
+statut: terminé
 priorité: normale
 dépend-de: []
 créé: 2026-08-22
@@ -16,49 +16,49 @@ urgents. Consignés ici pour ne pas les perdre ; aucun ne bloque la production.
 
 ## Points, par ordre d'intérêt
 
-- [ ] **Conteneur en root** : aucune directive `USER` dans le Dockerfile,
+- [x] **Conteneur en root** : aucune directive `USER` dans le Dockerfile,
       `frankenphp run` s'exécute en root (le `chown www-data` est sans effet). Passer
       à un utilisateur non privilégié demande de régler les permissions des volumes
       et les capacités de bind : à faire posément, avec test de déploiement.
-- [ ] **En-têtes de sécurité HTTP** : ni CSP `frame-ancestors`/`X-Frame-Options`
+- [x] **En-têtes de sécurité HTTP** : ni CSP `frame-ancestors`/`X-Frame-Options`
       (login frameable), ni `X-Content-Type-Options`, ni HSTS. Deux lignes `header`
       dans le `Caddyfile` suffisent.
-- [ ] **`/screen` et `/screen/data` sans rate limiting** : endpoints publics,
+- [x] **`/screen` et `/screen/data` sans rate limiting** : endpoints publics,
       ~5 requêtes SQL par hit. Ajouter un `throttle` généreux (les TV interrogent en
       boucle ; avec `trustProxies` posé, la limite s'applique par IP réelle).
       En profiter pour sérialiser explicitement la réponse (noms/codes seulement,
       pas les modèles entiers avec timestamps).
-- [ ] **Sessions non invalidées au changement de mot de passe**
+- [x] **Sessions non invalidées au changement de mot de passe**
       (`Settings/PasswordController`, `Admin/UserController::update`) : une session
       volée survit à la rotation du mot de passe. Activer
       `AuthenticateSession` ou déconnecter les autres sessions à la main.
-- [ ] **`ensureDefaultSlides()` non atomique** (`ScreenSlide.php`) : plusieurs
+- [x] **`ensureDefaultSlides()` non atomique** (`ScreenSlide.php`) : plusieurs
       requêtes anonymes simultanées sur une table vide peuvent créer les slides par
       défaut en double. Verrou, transaction + contrainte, ou tolérance assumée.
-- [ ] **500 au lieu de 422 sur course de créneau** (`ScheduleController::store/update`) :
+- [x] **500 au lieu de 422 sur course de créneau** (`ScheduleController::store/update`) :
       rattraper `UniqueConstraintViolationException` et répondre « créneau occupé ».
 - [ ] **Import Excel : DoS par fichier piégé** (authentifié) : 20 Mo compressés
       peuvent dépasser les 512 Mo de mémoire ; `getCalculatedValue()` évalue les
       formules ; une date malformée fait un 500 non rattrapé. Read filter, taille
       décompressée bornée, try/catch autour du parsing.
-- [ ] **Reliquats 2FA** : trait `TwoFactorAuthenticatable`, contrôleur, composables et
+- [x] **Reliquats 2FA** : trait `TwoFactorAuthenticatable`, contrôleur, composables et
       composants Vue non montés (dont le seul `v-html` du projet). À supprimer pour
       réduire la surface (suite d'IFO-008).
-- [ ] **CI sans MySQL ni build d'image** : les tests ne tournent que sur SQLite et
+- [x] **CI sans MySQL ni build d'image** : les tests ne tournent que sur SQLite et
       aucun workflow ne construit l'image Docker — la classe de bug IFO-006 reste
       invisible. Ajouter un job `mysql:8.4` (service container) et un `docker build`.
-- [ ] **`node_modules` dans une couche de l'image** : `COPY --from=builder /app` puis
+- [x] **`node_modules` dans une couche de l'image** : `COPY --from=builder /app` puis
       `rm -rf` laisse ~centaines de Mo dans la couche copiée. Exclure au `COPY` ou
       supprimer dans le stage builder.
-- [ ] **Stack dev sur SQLite pendant que son MySQL tourne à vide**
+- [x] **Stack dev sur SQLite pendant que son MySQL tourne à vide**
       (`docker-compose.dev.yml` n'injecte aucun `DB_*`, le `.env` généré vaut
       `sqlite`) : contraire à ADR-001, c'est le scénario qui a masqué IFO-006.
       Injecter les `DB_*` MySQL dans le service `app` de la stack dev.
-- [ ] **Les deux stacks locales partagent le nom de projet compose** (`ifosup-display`,
+- [x] **Les deux stacks locales partagent le nom de projet compose** (`ifosup-display`,
       dérivé du dossier) : lancer `docker compose up` pendant que la stack dev tourne
       fait se marcher dessus les deux jeux de conteneurs. Ajouter `name:` distincts
       dans les deux fichiers compose (constaté le 2026-08-22).
-- [ ] **Race au premier boot de la stack dev** : `app` et `vite` exécutent chacun
+- [x] **Race au premier boot de la stack dev** : `app` et `vite` exécutent chacun
       `composer install` sur le même volume ; le perdant sort en erreur
       (`vendor/pestphp/pest-plugin does not exist`). Un `depends_on` de `vite` sur la
       santé d'`app`, ou un verrou dans `dev-entrypoint.sh`, éviterait le
@@ -69,6 +69,21 @@ urgents. Consignés ici pour ne pas les perdre ; aucun ne bloque la production.
       `docker inspect` via `Config.Env` — la disparition de la sonde (2026-08-21)
       n'y change rien.
 
+## Restes assumés
+
+- **Import Excel / DoS mémoire** : traité partiellement — lecteurs PhpSpreadsheet
+  restreints à Xlsx/Xls et 422 explicite sur fichier illisible (au lieu d'un 500).
+  Le plafond de mémoire sur un classeur hostile n'est pas borné : le parseur
+  s'appuie sur les cellules fusionnées, incompatibles avec `setReadDataOnly`.
+  Risque théorique et authentifié ; à revoir seulement si le besoin apparaît.
+- **Hygiène Coolify** : action manuelle de Thibault dans l'interface (vider
+  `ADMIN_EMAIL`/`ADMIN_PASSWORD` après le premier boot). Documentée, non
+  automatisable depuis le dépôt.
+
 ## Journal du ticket
 
 - 2026-08-22 — création (audit croisé IFO-013).
+- 2026-08-22 — 12 points sur 14 traités le jour même (demande de Thibault),
+  validés par la suite de tests (284 verts), les checks front et un déploiement
+  complet de la stack prod-like (non-root vérifié sur volumes existants).
+  Les deux restes sont assumés ci-dessus. Clos.

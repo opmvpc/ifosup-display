@@ -1,7 +1,7 @@
 ---
 id: IFO-014
 titre: Import Excel — la casse des noms fait mentir l'aperçu et casse l'exécution
-statut: ouvert
+statut: terminé
 priorité: haute
 dépend-de: []
 créé: 2026-08-22
@@ -28,13 +28,14 @@ l'unicité sont sensibles à la casse : le comportement diffère de la productio
 
 ## Critères d'acceptation
 
-- [ ] L'aperçu classe un local existant à casse différente comme *existant* (pas de
+- [x] L'aperçu classe un local existant à casse différente comme *existant* (pas de
       création tentée à l'exécution, pas de 500)
-- [ ] Les lignes d'un cours dont le code ne diffère que par la casse sont importées,
+- [x] Les lignes d'un cours dont le code ne diffère que par la casse sont importées,
       pas ignorées
-- [ ] Tests couvrant les deux cas (au minimum au niveau du contrôleur, mappings
-      normalisés indépendamment du moteur SQL)
-- [ ] Comportement identique MySQL / SQLite (normalisation faite en PHP)
+- [x] Tests couvrant les deux cas (au minimum au niveau du contrôleur, mappings
+      normalisés indépendamment du moteur SQL) — 5 tests + 1 sur le fichier illisible
+- [x] Comportement identique MySQL / SQLite (normalisation faite en PHP, tables
+      chargées entièrement plutôt que filtrées par le moteur)
 
 ## Piste
 
@@ -46,3 +47,6 @@ création. Ne pas toucher à la base.
 ## Journal du ticket
 
 - 2026-08-22 — création (audit croisé IFO-013).
+- 2026-08-22 — corrigé (clé `mb_strtolower` commune à l'aperçu, aux conflits, à la
+  sélection et à l'exécution ; en bonus, 422 explicite sur fichier illisible et
+  lecteurs PhpSpreadsheet restreints à Xlsx/Xls). Suite verte, clos.

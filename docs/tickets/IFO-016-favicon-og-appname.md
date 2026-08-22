@@ -1,7 +1,7 @@
 ---
 id: IFO-016
 titre: Favicon de marque, carte de partage OG, nom d'application en dur
-statut: en-cours
+statut: terminé
 priorité: normale
 dépend-de: []
 créé: 2026-08-22
@@ -32,7 +32,7 @@ Demandes de Thibault du 2026-08-22 :
       absolues via `url()`
 - [x] `'name' => 'IFOSUP Display'` en dur, ligne `APP_NAME` retirée du compose
       Coolify
-- [ ] Vérification visuelle (onglet, carte de partage) sur la stack locale
+- [x] Vérification visuelle sur la stack locale : favicon rendu (flèche jaune sur carré arrondi navy), balises og:* servies avec URL absolues, og-image.png en 200
 
 ## Journal du ticket
 
