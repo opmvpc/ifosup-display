@@ -228,3 +228,40 @@ it("conserve le fichier téléversé quand l'import échoue", function () {
     Storage::assertExists($path);
     expect(session('scheduler_import_pending_file'))->toBe($path);
 });
+
+it('rattache les lignes à un local existant dont la casse diffère, sans le recréer ni échouer (IFO-014)', function () {
+    // Sous MySQL, recréer « Salle 101 » à côté de « SALLE 101 » violait la
+    // contrainte d'unicité (insensible à la casse) et répondait 500.
+    $room = Room::factory()->create(['name' => 'SALLE 101']);
+    Course::factory()->create(['code' => 'MATH101']);
+
+    uploadDefaultPlanningForExecute();
+
+    $response = $this->postJson(route('scheduler.import.execute'), [
+        'selected_rooms' => ['Salle 101'],
+        'selected_courses' => ['MATH101'],
+        'purge_period' => false,
+    ]);
+
+    $response->assertOk();
+    expect(Room::count())->toBe(1)
+        ->and(Assignment::where('room_id', $room->id)->count())->toBeGreaterThan(0);
+});
+
+it("importe les lignes d'un cours dont le code ne diffère que par la casse (IFO-014)", function () {
+    // Le code « math101 » en base doit capter les lignes « MATH101 » du fichier,
+    // au lieu de les ignorer en silence avec une réponse de succès.
+    $course = Course::factory()->create(['code' => 'math101']);
+
+    uploadDefaultPlanningForExecute();
+
+    $response = $this->postJson(route('scheduler.import.execute'), [
+        'selected_rooms' => ['Salle 101'],
+        'selected_courses' => ['MATH101'],
+        'purge_period' => false,
+    ]);
+
+    $response->assertOk();
+    expect($response->json('imported'))->toBeGreaterThan(0)
+        ->and(Assignment::where('course_id', $course->id)->count())->toBe($response->json('imported'));
+});

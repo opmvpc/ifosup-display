@@ -135,3 +135,55 @@ it('calcule le breakdown par salle et par cours avec le compte de conflits', fun
     expect($mathBreakdown['count'])->toBe(2);
     expect($mathBreakdown['conflict_count'])->toBe(1);
 });
+
+it('reconnaît un local existant dont la casse diffère du fichier (IFO-014)', function () {
+    // MySQL compare sans tenir compte de la casse ; la correspondance doit être
+    // identique quel que soit le moteur, via la normalisation PHP du contrôleur.
+    Room::factory()->create(['name' => 'SALLE 101']);
+
+    uploadDefaultPlanning();
+
+    $response = $this->postJson(route('scheduler.import.preview'));
+
+    $response->assertOk();
+    expect($response->json('existing_rooms'))->toContain('Salle 101')
+        ->and($response->json('new_rooms'))->not->toContain('Salle 101');
+});
+
+it('reconnaît un cours existant dont le code ne diffère que par la casse (IFO-014)', function () {
+    Course::factory()->create(['code' => 'math101', 'name' => 'Mathématiques']);
+
+    uploadDefaultPlanning();
+
+    $response = $this->postJson(route('scheduler.import.preview'));
+
+    $response->assertOk();
+    expect($response->json('unknown_courses'))->not->toContain('MATH101')
+        ->and(collect($response->json('known_courses'))->pluck('code'))->toContain('math101');
+});
+
+it('ne signale pas de conflit quand seul le code du cours change de casse (IFO-014)', function () {
+    $room = Room::factory()->create(['name' => 'Salle 101']);
+    $course = Course::factory()->create(['code' => 'math101']);
+    Assignment::factory()->forSlot($room, '2025-09-08', 'morning')->forCourse($course)->create();
+
+    uploadDefaultPlanning();
+
+    $response = $this->postJson(route('scheduler.import.preview'));
+
+    $response->assertOk();
+    expect($response->json('conflicts'))->toBe([]);
+});
+
+it('répond 422 avec un message clair quand le fichier est illisible (IFO-015)', function () {
+    uploadDefaultPlanning();
+
+    // Corrompt le fichier en attente après coup : le parseur doit échouer
+    // proprement, pas en 500.
+    Storage::put(session('scheduler_import_pending_file'), 'pas un classeur Excel');
+
+    $response = $this->postJson(route('scheduler.import.preview'));
+
+    $response->assertStatus(422);
+    expect($response->json('error'))->toContain("n'a pas pu être lu");
+});
