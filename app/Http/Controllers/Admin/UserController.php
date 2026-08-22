@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,6 +69,16 @@ class UserController extends Controller
         }
 
         $user->update($validated);
+
+        // `AuthenticateSession` déconnecte les sessions dont le hash ne correspond
+        // plus : voulu pour les autres sessions du compte modifié, mais un admin qui
+        // change son propre mot de passe ici ne doit pas être déconnecté lui-même.
+        if (isset($validated['password']) && $user->is($request->user())) {
+            $request->session()->put(
+                'password_hash_'.Auth::getDefaultDriver(),
+                $user->getAuthPassword(),
+            );
+        }
 
         return redirect()->route('admin.users.show', $user);
     }

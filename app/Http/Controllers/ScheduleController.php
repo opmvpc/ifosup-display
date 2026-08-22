@@ -10,6 +10,7 @@ use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Room;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
@@ -84,7 +85,16 @@ class ScheduleController extends Controller
             ], 422);
         }
 
-        $assignment = Assignment::create($data)->load(['course', 'room']);
+        // Deux écritures strictement concurrentes peuvent toutes deux passer
+        // slotIsOccupied ; la contrainte d'unicité tranche alors, et mérite le
+        // même message qu'un créneau occupé — pas un 500.
+        try {
+            $assignment = Assignment::create($data)->load(['course', 'room']);
+        } catch (UniqueConstraintViolationException) {
+            return response()->json([
+                'message' => 'Ce créneau est déjà occupé.',
+            ], 422);
+        }
 
         return response()->json([
             'assignment' => $assignment,
@@ -106,7 +116,13 @@ class ScheduleController extends Controller
             ], 422);
         }
 
-        $assignment->update($data);
+        try {
+            $assignment->update($data);
+        } catch (UniqueConstraintViolationException) {
+            return response()->json([
+                'message' => 'Ce créneau est déjà occupé.',
+            ], 422);
+        }
 
         return response()->json([
             'assignment' => $assignment->load(['course', 'room']),

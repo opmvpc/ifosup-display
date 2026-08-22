@@ -13,8 +13,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
-Route::get('screen', [ScreenController::class, 'index'])->name('screen');
-Route::get('screen/data', [ScreenController::class, 'data'])->name('screen.data');
+// Endpoints publics interrogés en boucle par les téléviseurs. La limite est
+// par adresse IP : toutes les TV de l'école sortent derrière la même IP publique,
+// d'où une marge large (~4 requêtes/min par TV en régime de croisière).
+Route::middleware('throttle:120,1')->group(function () {
+    Route::get('screen', [ScreenController::class, 'index'])->name('screen');
+    Route::get('screen/data', [ScreenController::class, 'data'])->name('screen.data');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('teachers', TeacherController::class);

@@ -211,11 +211,12 @@ it('ne montre que les assignments du jour courant', function () {
         ->where('type', 'schedule')
         ->firstWhere('data.title', 'Cours du matin');
 
-    $courseIds = collect($morningRows['data']['rows'])->pluck('course.id');
+    // La réponse publique n'expose plus les ids de relations : on compare les codes.
+    $courseCodes = collect($morningRows['data']['rows'])->pluck('course.code');
 
-    expect($courseIds)->toContain($todayAssignment->course_id)
-        ->and($courseIds)->not->toContain($yesterday->course_id)
-        ->and($courseIds)->not->toContain($tomorrow->course_id);
+    expect($courseCodes)->toContain($todayAssignment->course->code)
+        ->and($courseCodes)->not->toContain($yesterday->course->code)
+        ->and($courseCodes)->not->toContain($tomorrow->course->code);
 });
 
 it('trie les groupes de périodes dans l\'ordre matin, après-midi, soir', function () {
