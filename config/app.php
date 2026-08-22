@@ -13,7 +13,9 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    // En dur, volontairement : l'interface de Coolify refuse les valeurs
+    // d'environnement contenant des espaces, APP_NAME y est donc inutilisable.
+    'name' => 'IFOSUP Display',
 
     /*
     |--------------------------------------------------------------------------
