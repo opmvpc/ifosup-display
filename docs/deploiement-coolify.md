@@ -56,9 +56,10 @@ le compte administrateur si la table `users` est vide, et n'ont plus aucun effet
 | `ADMIN_EMAIL` | adresse du premier administrateur |
 | `ADMIN_PASSWORD` | mot de passe fort, **à changer après la première connexion** |
 
-`APP_ENV` valant `production` par défaut, `AppServiceProvider` impose une politique de
-mot de passe stricte : 12 caractères minimum, casse mixte, chiffres, symboles, et absence
-des bases de mots de passe compromis. `ADMIN_PASSWORD` doit la respecter.
+Choisir un mot de passe au niveau de la politique applicative (12 caractères minimum,
+casse mixte, chiffres, symboles) : elle s'applique aux formulaires de l'application,
+mais `app:create-admin-user` ne la vérifie pas — un `ADMIN_PASSWORD` faible serait
+accepté tel quel au premier démarrage.
 
 **Tout le reste a une valeur par défaut** adaptée à la production, à ne renseigner que
 pour s'en écarter :
@@ -118,10 +119,14 @@ sauvegardes automatiques de Coolify **ne s'appliquent pas** : c'est un choix ass
 Un dump depuis le serveur, à planifier par cron :
 
 ```bash
-docker exec <conteneur-mysql> \
-  mysqldump -u root -p"$DB_ROOT_PASSWORD" --single-transaction ifosup_display \
+docker exec <conteneur-mysql> sh -c \
+  'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction ifosup_display' \
   | gzip > ifosup-$(date +%F).sql.gz
 ```
+
+La variable doit être développée **dans le conteneur** (d'où le `sh -c` et les quotes
+simples), où elle s'appelle `MYSQL_ROOT_PASSWORD` : côté hôte, `$DB_ROOT_PASSWORD`
+n'existe pas et le dump partirait avec un mot de passe vide.
 
 `--single-transaction` évite de verrouiller les tables pendant le dump. Penser à
 sauvegarder aussi le volume `ifosup-storage` : il contient les plannings importés et les
@@ -181,9 +186,11 @@ docker logs $(docker ps -a --filter name=mysql --format '{{.Names}}' | head -1) 
 ```
 
 Correctif : renseigner `DB_ROOT_PASSWORD` et `DB_PASSWORD` dans Coolify, puis redéployer.
-Si un conteneur MySQL a déjà tourné avec un autre mot de passe root, supprimer le volume
-`ifosup-mysql` avant de relancer : le mot de passe root est figé à l'initialisation de la
-base et ne change pas en modifiant la variable ensuite.
+Si un conteneur MySQL a déjà tourné avec d'autres mots de passe, supprimer le volume
+`ifosup-mysql` avant de relancer : **tous** les mots de passe (root comme `ifosup`) sont
+figés à l'initialisation de la base et ne changent pas en modifiant les variables ensuite.
+Symptôme d'un `DB_PASSWORD` modifié après coup : la sonde MySQL reste verte (elle ne teste
+pas l'authentification), mais l'application attend la base 120 s puis redémarre en boucle.
 
 ### Le déploiement réussit mais l'application renvoie une erreur 500
 

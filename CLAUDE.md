@@ -28,7 +28,7 @@ en stage par un étudiant BES Web Developer, repris par l'école.
 docker compose up -d --build
 docker compose logs -f app
 
-# Stack Docker de dev (hot-reload Vite)               -> http://localhost:8000
+# Stack Docker de dev (hot-reload Vite)               -> http://localhost:8001
 docker compose -f docker-compose.dev.yml up --build
 
 # Qualité (dans le container dev)

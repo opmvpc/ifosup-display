@@ -43,7 +43,7 @@ Aucun prérequis hormis Docker Desktop :
 
 ```bash
 docker compose up -d --build          # image de production  -> http://localhost:8080
-docker compose -f docker-compose.dev.yml up --build   # dev, hot-reload -> http://localhost:8000
+docker compose -f docker-compose.dev.yml up --build   # dev, hot-reload -> http://localhost:8001
 ```
 
 Détails, seeders et dépannage : [`docs/installation-locale.md`](docs/installation-locale.md).
