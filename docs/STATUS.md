@@ -96,6 +96,7 @@ fonctionnel (le front refiltrait déjà), seulement du sur-transfert.
 | Healthcheck du container | `healthy` (il échouait en permanence avant correction) |
 | Recette de l'écran public | Bonne période affichée, date en français, horloge, statut « ANNULÉ » rendu |
 | `docker-compose.coolify.yml` rejoué en local (2026-08-21) | MySQL `healthy`, application `healthy`, migrations passées, compte admin créé, `/`, `/screen` et `/login` en 200 |
+| Image reconstruite après l'audit, rejouée en local (2026-08-22) | `healthy` (sonde `/up`), toutes les routes en 200, migrations (dont les deux corrigées) passées sur MySQL, `php.ini` chargé : upload 300M / post 310M / mémoire 512M |
 
 ## Prochaine action
 

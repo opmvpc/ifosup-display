@@ -54,6 +54,15 @@ urgents. Consignés ici pour ne pas les perdre ; aucun ne bloque la production.
       (`docker-compose.dev.yml` n'injecte aucun `DB_*`, le `.env` généré vaut
       `sqlite`) : contraire à ADR-001, c'est le scénario qui a masqué IFO-006.
       Injecter les `DB_*` MySQL dans le service `app` de la stack dev.
+- [ ] **Les deux stacks locales partagent le nom de projet compose** (`ifosup-display`,
+      dérivé du dossier) : lancer `docker compose up` pendant que la stack dev tourne
+      fait se marcher dessus les deux jeux de conteneurs. Ajouter `name:` distincts
+      dans les deux fichiers compose (constaté le 2026-08-22).
+- [ ] **Race au premier boot de la stack dev** : `app` et `vite` exécutent chacun
+      `composer install` sur le même volume ; le perdant sort en erreur
+      (`vendor/pestphp/pest-plugin does not exist`). Un `depends_on` de `vite` sur la
+      santé d'`app`, ou un verrou dans `dev-entrypoint.sh`, éviterait le
+      redémarrage manuel (constaté le 2026-08-22).
 - [ ] **Hygiène Coolify** : vider `ADMIN_EMAIL`/`ADMIN_PASSWORD` dans l'interface une
       fois le compte créé (ils restent lisibles dans l'environnement du conteneur) ;
       noter que `MYSQL_ROOT_PASSWORD` reste de toute façon visible dans
