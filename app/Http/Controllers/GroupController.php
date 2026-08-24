@@ -14,7 +14,7 @@ class GroupController extends Controller
      */
     public function index()
     {
-        $groups = Group::all();
+        $groups = Group::orderBy('name')->get();
 
         return Inertia::render('resources/groups/Index', [
             'groups' => $groups,

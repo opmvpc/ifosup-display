@@ -6,6 +6,7 @@ import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { compareRoomNames } from '@/lib/rooms';
 
 const props = defineProps<{
     rooms: Room[];
@@ -14,21 +15,8 @@ const props = defineProps<{
 const routes = useResourceRoutes(null, actions);
 const query = ref('');
 
-function compareRooms(a: string, b: string): number {
-    const isInt = (s: string) => /^-?\d+$/.test(s);
-    const na = parseInt(a, 10),
-        nb = parseInt(b, 10);
-    const group = (s: string, n: number) => (!isInt(s) ? 2 : n < 0 ? 0 : 1);
-    const ga = group(a, na),
-        gb = group(b, nb);
-    if (ga !== gb) return ga - gb;
-    if (ga === 0) return Math.abs(na) - Math.abs(nb);
-    if (ga === 1) return na - nb;
-    return a.localeCompare(b);
-}
-
 const sortedRooms = computed(() =>
-    [...props.rooms].sort((a, b) => compareRooms(a.name, b.name)),
+    [...props.rooms].sort((a, b) => compareRoomNames(a.name, b.name)),
 );
 
 const filteredRooms = computed(() => {
