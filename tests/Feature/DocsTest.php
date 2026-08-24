@@ -24,6 +24,10 @@ it('affiche chaque chapitre de la documentation', function (string $slug, string
     ['utilisateurs', 'docs/Utilisateurs'],
 ]);
 
+it('publie le modèle Excel téléchargeable depuis la documentation', function () {
+    expect(file_exists(public_path('docs-img/modele-import-planning.xlsx')))->toBeTrue();
+});
+
 it('renvoie une 404 pour un chapitre inconnu', function () {
     actingAsUser();
 

@@ -242,6 +242,27 @@ onUnmounted(() => {
     color: var(--muted-foreground);
 }
 
+.docs-article table {
+    margin: 1.25rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.docs-article th,
+.docs-article td {
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.75rem;
+    text-align: left;
+    color: var(--muted-foreground);
+}
+
+.docs-article th {
+    background: #1e2d55;
+    color: #ffffff;
+    font-weight: 600;
+}
+
 .docs-article strong {
     font-weight: 600;
     color: var(--foreground);

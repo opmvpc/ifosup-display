@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FluxImportExcel from '@/components/docs/diagrams/FluxImportExcel.vue';
 import DocsCallout from '@/components/docs/DocsCallout.vue';
+import DocsImage from '@/components/docs/DocsImage.vue';
 import DocsLayout from '@/layouts/docs/DocsLayout.vue';
 </script>
 
@@ -19,6 +20,12 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             vérification détaille tout ce qui va se passer.
         </p>
         <FluxImportExcel class="my-6" />
+
+        <DocsImage
+            src="/docs-img/import-excel.png"
+            alt="L'écran d'import Excel avec la zone de dépôt du fichier et le choix de l'année scolaire"
+            caption="L'écran de dépôt du fichier d'horaire."
+        />
 
         <h2 id="deroulement">Le déroulement</h2>
         <ol>
@@ -45,6 +52,105 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             <strong>Créations</strong>, <strong>Remplacements</strong> et
             <strong>Ignorées</strong>.
         </p>
+
+        <h2 id="structure-du-fichier">La structure du fichier</h2>
+        <p>
+            Pas besoin de titres de colonnes particuliers : l'application repère
+            elle-même les blocs d'horaire dans chaque feuille du classeur. Elle
+            cherche une cellule contenant le mot
+            <strong>« Matin »</strong>, <strong>« Midi »</strong> (= après-midi)
+            ou <strong>« Soir »</strong>, puis lit autour de cette cellule :
+        </p>
+        <ul>
+            <li>
+                <strong>la colonne juste à gauche</strong> du mot-clé contient
+                les <strong>noms des locaux</strong>, un par ligne ;
+            </li>
+            <li>
+                <strong>la ligne juste en dessous</strong> contient les
+                <strong>dates</strong> : la première au format « jour/mois »
+                (ex. 15/09), et chaque colonne suivante vaut automatiquement
+                <strong>une semaine de plus</strong> — inutile de toutes les
+                écrire correctement, seule la première compte. L'année vient du
+                champ « année scolaire » choisi au moment du dépôt ;
+            </li>
+            <li>
+                la ligne sous les dates est <strong>libre</strong> (elle est
+                ignorée — vous pouvez y mettre ce que vous voulez) ;
+            </li>
+            <li>
+                ensuite, chaque cellule contient le
+                <strong>code du cours</strong> donné dans ce local à cette date.
+                Une cellule vide = pas de cours. Deux lignes vides d'affilée
+                terminent le bloc.
+            </li>
+        </ul>
+        <p>
+            Concrètement, un bloc « Matin » ressemble à ceci (les couleurs sont
+            décoratives, seul le contenu compte) :
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Local</th>
+                    <th>Matin</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td></td>
+                    <td><strong>15/09</strong></td>
+                    <td><strong>22/09</strong></td>
+                    <td><strong>29/09</strong></td>
+                    <td><strong>06/10</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <em>(ligne libre, ignorée par l'import)</em>
+                    </td>
+                </tr>
+                <tr>
+                    <td>104</td>
+                    <td>5IPRO</td>
+                    <td>5IPRO</td>
+                    <td>5IPRO</td>
+                    <td>5IPRO</td>
+                </tr>
+                <tr>
+                    <td>105</td>
+                    <td>ANG-UE1</td>
+                    <td>ANG-UE1</td>
+                    <td></td>
+                    <td>ANG-UE1</td>
+                </tr>
+                <tr>
+                    <td>- 103</td>
+                    <td>5XENV</td>
+                    <td>5XENV</td>
+                    <td>5XENV</td>
+                    <td>5XENV</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Une même feuille peut enchaîner plusieurs blocs (Matin, puis Midi,
+            puis Soir), et le classeur peut contenir plusieurs feuilles — par
+            exemple une par jour de la semaine (« Lundi », « Mardi »…) : toutes
+            sont lues.
+        </p>
+        <DocsCallout variant="astuce" title="Modèle prêt à l'emploi">
+            <p>
+                <a href="/docs-img/modele-import-planning.xlsx" download
+                    >Téléchargez le modèle Excel</a
+                >
+                : il contient deux feuilles d'exemple (Lundi et Mardi) avec la
+                structure attendue — remplacez simplement les dates, les locaux
+                et les codes de cours par les vôtres.
+            </p>
+        </DocsCallout>
 
         <h2 id="cours-reconnus-ou-ignores">Cours reconnus ou ignorés</h2>
         <p>

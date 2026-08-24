@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DocsCallout from '@/components/docs/DocsCallout.vue';
+import DocsImage from '@/components/docs/DocsImage.vue';
 import DocsLayout from '@/layouts/docs/DocsLayout.vue';
 </script>
 
@@ -36,6 +37,12 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             ligne ouvre la fiche, d'où l'on peut modifier ou supprimer.
         </p>
 
+        <DocsImage
+            src="/docs-img/cours-liste.png"
+            alt="La liste des cours avec la recherche, les codes, les intitulés et les badges d'année"
+            caption="La liste des cours : recherche en haut, année affichée quand elle est renseignée."
+        />
+
         <h2 id="creer-un-cours">Créer un cours</h2>
         <p>Le formulaire d'un cours comporte cinq champs :</p>
         <ul>
@@ -65,6 +72,12 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
                 suite.
             </p>
         </DocsCallout>
+
+        <DocsImage
+            src="/docs-img/cours-formulaire.png"
+            alt="Le formulaire de création d'un cours : code, nom, année, enseignant, sections"
+            caption="Le formulaire d'un cours, avec le sélecteur d'année."
+        />
 
         <h2 id="supprimer-une-ressource">Supprimer une ressource</h2>
         <p>

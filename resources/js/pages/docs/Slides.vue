@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DocsCallout from '@/components/docs/DocsCallout.vue';
+import DocsImage from '@/components/docs/DocsImage.vue';
 import DocsLayout from '@/layouts/docs/DocsLayout.vue';
 </script>
 
@@ -15,6 +16,11 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             vignettes, dans l'ordre de passage à l'écran. Quatre types existent
             :
         </p>
+        <DocsImage
+            src="/docs-img/slides.png"
+            alt="La page Slides écran : vignettes des slides dans l'ordre de passage, avec leurs durées"
+            caption="Les vignettes du diaporama, dans l'ordre de passage sur les écrans."
+        />
         <ul>
             <li>
                 <strong>Bienvenue</strong> — toujours en première position,

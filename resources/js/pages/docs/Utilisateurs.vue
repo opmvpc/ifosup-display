@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DocsCallout from '@/components/docs/DocsCallout.vue';
+import DocsImage from '@/components/docs/DocsImage.vue';
 import DocsLayout from '@/layouts/docs/DocsLayout.vue';
 </script>
 
@@ -21,6 +22,12 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             comptes se créent uniquement ici, et un mot de passe perdu se
             remplace par un collègue via ce même menu.
         </p>
+
+        <DocsImage
+            src="/docs-img/utilisateurs.png"
+            alt="La liste des comptes utilisateurs avec la recherche"
+            caption="La liste des comptes ayant accès à l'application."
+        />
 
         <h2 id="creer-un-compte">Créer un compte</h2>
         <p>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DocsCallout from '@/components/docs/DocsCallout.vue';
+import DocsImage from '@/components/docs/DocsImage.vue';
 import DocsLayout from '@/layouts/docs/DocsLayout.vue';
 </script>
 
@@ -17,6 +18,11 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             local, tel jour, telle période », et ne peut contenir qu'un seul
             cours à la fois.
         </p>
+        <DocsImage
+            src="/docs-img/planning.png"
+            alt="La grille du planning : locaux en lignes, jours et périodes en colonnes, avec des cartes de cours colorées"
+            caption="La grille du planning — un cours « En retard » est entouré d'orange."
+        />
         <p>Quelques commodités :</p>
         <ul>
             <li>

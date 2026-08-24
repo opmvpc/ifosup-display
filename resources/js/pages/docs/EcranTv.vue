@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import CycleSlides from '@/components/docs/diagrams/CycleSlides.vue';
 import DocsCallout from '@/components/docs/DocsCallout.vue';
+import DocsImage from '@/components/docs/DocsImage.vue';
 import DocsLayout from '@/layouts/docs/DocsLayout.vue';
 </script>
 
@@ -50,6 +51,12 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
             Si la liste est plus longue que l'écran, elle défile doucement vers
             le bas, puis passe au slide suivant.
         </p>
+
+        <DocsImage
+            src="/docs-img/ecran-planning.png"
+            alt="Le slide planning sur la télévision : cours, professeur, sections et local, avec un professeur signalé en retard"
+            caption="Le planning tel qu'affiché sur les téléviseurs — année sous le nom du cours, retard signalé en orange."
+        />
 
         <h2 id="statuts-annule-et-en-retard">
             Cours annulé, professeur en retard
