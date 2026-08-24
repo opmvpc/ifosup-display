@@ -1,6 +1,15 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-08-22_
+_Dernière mise à jour : 2026-08-24_
+
+## Hotfix en cours (2026-08-24)
+
+Les médias de slides répondaient 404 en production : régression du conteneur
+non-root d'IFO-015 — `artisan storage:link` échouait en silence (`|| true`) en
+`www-data` contre un `/app/public` root, le lien `public/storage` n'était plus
+créé. Correctif poussé sur `main` (lien posé en root dans l'entrypoint) :
+[IFO-017](tickets/IFO-017-storage-link-non-root.md). À vérifier après
+redéploiement Coolify ; les fichiers uploadés sont intacts sur le volume.
 
 ## Où on en est
 
@@ -58,6 +67,7 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-014](tickets/IFO-014-import-sensible-casse.md) | Import Excel sensible à la casse (500 / lignes ignorées) | terminé |
 | [IFO-015](tickets/IFO-015-durcissements-differes.md) | Durcissements de l'audit croisé (12/14, deux restes assumés) | terminé |
 | [IFO-016](tickets/IFO-016-favicon-og-appname.md) | Favicon de marque, carte OG, nom d'application en dur | terminé |
+| [IFO-017](tickets/IFO-017-storage-link-non-root.md) | Médias de slides en 404 (storage:link vs non-root) | **en vérification** |
 
 ## Décisions
 

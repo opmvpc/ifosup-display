@@ -60,7 +60,10 @@ WORKDIR /app
 COPY --from=builder /app /app
 
 RUN mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/public bootstrap/cache && \
-    chown -R www-data:www-data storage bootstrap/cache
+    chown -R www-data:www-data storage bootstrap/cache && \
+    # Lien public/storage figé dans l'image : public/ n'est pas sur un volume,
+    # et l'entrypoint (en www-data depuis IFO-015) ne peut pas écrire dedans.
+    ln -sfn /app/storage/app/public /app/public/storage
 
 COPY Caddyfile /Caddyfile
 COPY docker-entrypoint.sh /start-container.sh

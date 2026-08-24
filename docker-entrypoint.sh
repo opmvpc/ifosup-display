@@ -17,6 +17,12 @@ if [ "$(id -u)" = "0" ]; then
   mkdir -p /config /data
   chown -R www-data:www-data /config /data || true
 
+  # Lien public/storage : /app/public appartient à root, donc `artisan
+  # storage:link` échouait plus bas en www-data et son erreur était avalée par
+  # `|| true` — tous les médias de slides répondaient 404. Le lien se pose ici,
+  # tant qu'on est root.
+  ln -sfn /app/storage/app/public /app/public/storage
+
   exec setpriv --reuid=www-data --regid=www-data --init-groups "$0" "$@"
 fi
 
@@ -42,7 +48,8 @@ php artisan migrate --force
 # Crée l'admin depuis ADMIN_EMAIL / ADMIN_PASSWORD si la base est vide
 php artisan app:create-admin-user
 
-php artisan storage:link --force || true
+# Le lien public/storage est posé par la phase root ci-dessus : ici, en
+# www-data, storage:link ne peut pas écrire dans /app/public.
 
 php artisan optimize:clear
 php artisan optimize
