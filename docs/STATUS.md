@@ -11,11 +11,12 @@ jusqu'au planning TV), ratio des médias de slides conservé (`object-contain`
 sur fond `#1e2d55`), et `CourseCatalogSeeder` manuel pour remplir le catalogue
 IFOSUP sur le serveur. La **documentation intégrée**
 ([IFO-019](tickets/IFO-019-documentation-integree.md)) est également sur la
-branche : `/docs` (auth), sept chapitres non techniques, sidebar de chapitres +
-« Sur cette page », trois infographies SVG. **303 tests verts**, lint/types OK.
-Reste : captures d'écran de la doc (pane navigateur requise), PR + merge +
-déploiement, puis lancer `php artisan db:seed --class=CourseCatalogSeeder` en
-prod.
+branche, **terminée** : `/docs` (auth), sept chapitres non techniques, sidebar
+de chapitres + « Sur cette page », trois infographies SVG, sept captures
+d'écran, structure du fichier d'import documentée avec modèle xlsx
+téléchargeable. **304 tests verts**, lint/types OK.
+Reste : PR + merge + déploiement, puis lancer
+`php artisan db:seed --class=CourseCatalogSeeder` en prod.
 
 ## Hotfix en cours (2026-08-24)
 
@@ -84,7 +85,7 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-016](tickets/IFO-016-favicon-og-appname.md) | Favicon de marque, carte OG, nom d'application en dur | terminé |
 | [IFO-017](tickets/IFO-017-storage-link-non-root.md) | Médias de slides en 404 (storage:link vs non-root) | **en vérification** |
 | [IFO-018](tickets/IFO-018-retours-directrice.md) | Retours directrice (tris, année de cours, ratio médias, seeder) | **en-cours** |
-| [IFO-019](tickets/IFO-019-documentation-integree.md) | Documentation intégrée pour les utilisateurs | **ouvert** |
+| [IFO-019](tickets/IFO-019-documentation-integree.md) | Documentation intégrée pour les utilisateurs | terminé |
 
 ## Décisions
 
