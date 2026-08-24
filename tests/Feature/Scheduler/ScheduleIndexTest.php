@@ -106,20 +106,20 @@ it('exclut les attributions hors de la plage from/to', function () {
         ->assertInertia(fn (Assert $page) => $page->has('assignments', 1));
 });
 
-it('retourne toutes les salles et tous les cours triés par nom', function () {
+it('retourne toutes les salles et tous les cours triés par code', function () {
     actingAsUser();
 
     Room::factory()->count(2)->create();
-    Course::factory()->create(['code' => 'ZZZ-1', 'name' => 'Anglais']);
-    Course::factory()->create(['code' => 'AAA-1', 'name' => 'Zoologie']);
-    Course::factory()->create(['code' => 'MMM-1', 'name' => 'Mathématiques']);
+    Course::factory()->create(['code' => 'ZZZ-1']);
+    Course::factory()->create(['code' => 'AAA-1']);
+    Course::factory()->create(['code' => 'MMM-1']);
 
     $this->get(route('schedule'))
         ->assertInertia(fn (Assert $page) => $page
             ->has('rooms', 2)
             ->has('courses', 3)
-            ->where('courses.0.name', 'Anglais')
-            ->where('courses.1.name', 'Mathématiques')
-            ->where('courses.2.name', 'Zoologie')
+            ->where('courses.0.code', 'AAA-1')
+            ->where('courses.1.code', 'MMM-1')
+            ->where('courses.2.code', 'ZZZ-1')
         );
 });

@@ -16,7 +16,7 @@ class CourseController extends Controller
      */
     public function index()
     {
-        $courses = Course::orderBy('name')->orderBy('code')->get();
+        $courses = Course::orderBy('code')->get();
 
         return Inertia::render('resources/courses/Index', [
             'courses' => $courses,

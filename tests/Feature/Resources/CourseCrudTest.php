@@ -18,18 +18,18 @@ it('redirige les invités vers la connexion sur toutes les routes courses', func
 });
 
 describe('index', function () {
-    it('affiche la liste des cours triée par nom', function () {
+    it('affiche la liste des cours triée par code', function () {
         actingAsUser();
-        Course::factory()->create(['code' => 'AAA-1', 'name' => 'Zoologie']);
-        Course::factory()->create(['code' => 'ZZZ-1', 'name' => 'Anglais']);
+        Course::factory()->create(['code' => 'ZZZ-1']);
+        Course::factory()->create(['code' => 'AAA-1']);
 
         $response = $this->get(route('courses.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('resources/courses/Index'));
 
-        $names = collect($response->viewData('page')['props']['courses'])->pluck('name')->all();
+        $codes = collect($response->viewData('page')['props']['courses'])->pluck('code')->all();
 
-        expect($names)->toBe(['Anglais', 'Zoologie']);
+        expect($codes)->toBe(['AAA-1', 'ZZZ-1']);
     });
 });
 

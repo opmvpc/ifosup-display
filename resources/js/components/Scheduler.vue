@@ -184,10 +184,8 @@ const assignments = ref<PersistedAssignment[]>([
     ...(props.assignments as PersistedAssignment[]),
 ]);
 const courses = computed(() => {
-    return [...props.courses].sort(
-        (a, b) =>
-            a.name.localeCompare(b.name, 'fr') ||
-            a.code.localeCompare(b.code, 'fr'),
+    return [...props.courses].sort((a, b) =>
+        a.code.localeCompare(b.code, 'fr'),
     );
 });
 

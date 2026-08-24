@@ -51,7 +51,7 @@ class ScheduleController extends Controller
             ->get();
 
         $rooms = Room::all();
-        $courses = Course::orderBy('name')->orderBy('code')->get();
+        $courses = Course::orderBy('code')->get();
 
         return Inertia::render('Schedule', [
             'assignments' => $assignments,
