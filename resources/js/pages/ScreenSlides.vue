@@ -628,17 +628,17 @@ const durationLabel = (slide: ScreenSlideItem) => {
                                     "
                                     :src="slide.image_url"
                                     alt="Apercu image"
-                                    class="h-full w-full object-cover"
+                                    class="h-full w-full bg-[#1e2d55] object-contain"
                                 />
 
                                 <div
                                     v-else-if="slide.type === 'video'"
-                                    class="relative h-full w-full bg-black"
+                                    class="relative h-full w-full bg-[#1e2d55]"
                                 >
                                     <video
                                         v-if="slide.video_url"
                                         :src="slide.video_url"
-                                        class="h-full w-full object-cover"
+                                        class="h-full w-full object-contain"
                                         muted
                                         preload="metadata"
                                         @loadedmetadata="
