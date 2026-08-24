@@ -79,6 +79,7 @@ class ScreenController extends Controller
                             'course' => $assignment->course === null ? null : [
                                 'code' => $assignment->course->code,
                                 'name' => $assignment->course->name,
+                                'year' => $assignment->course->year,
                                 'teacher' => $assignment->course->teacher === null ? null : [
                                     'name' => $assignment->course->teacher->name,
                                 ],

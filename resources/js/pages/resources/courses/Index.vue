@@ -7,6 +7,7 @@ import ResourceListItemData from '@/components/resources/ResourceListItemData.vu
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { courseYearLabel } from '@/lib/courseYear';
 
 const props = defineProps<{
     courses: Course[];
@@ -59,6 +60,9 @@ const getAvatarUrl = (name: string) => {
                 :image="getAvatarUrl(course.code)"
             >
                 <ResourceListItemData>{{ course.name }}</ResourceListItemData>
+                <ResourceListItemData v-if="courseYearLabel(course.year)">
+                    {{ courseYearLabel(course.year) }}
+                </ResourceListItemData>
             </ResourceListItem>
             <p
                 v-if="filteredCourses.length === 0 && query"

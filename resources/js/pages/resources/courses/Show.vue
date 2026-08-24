@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { HashIcon, Layers3Icon, User, UsersRoundIcon } from 'lucide-vue-next';
+import {
+    GraduationCapIcon,
+    HashIcon,
+    Layers3Icon,
+    User,
+    UsersRoundIcon,
+} from 'lucide-vue-next';
 import actions from '@/actions/App/Http/Controllers/CourseController';
 import groupActions from '@/actions/App/Http/Controllers/GroupController';
 import teacherActions from '@/actions/App/Http/Controllers/TeacherController';
 import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceShowLayout from '@/layouts/resources/ResourceShowLayout.vue';
+import { courseYearLabel } from '@/lib/courseYear';
 
 const props = defineProps<{
     course: Course;
@@ -54,6 +61,13 @@ const getGroupAvatarUrl = (name: string) => {
                             >
                                 <HashIcon class="mt-px h-3 w-3" />
                                 {{ course.code }}
+                            </span>
+                            <span
+                                v-if="courseYearLabel(course.year)"
+                                class="flex items-center gap-2 rounded-full border border-sidebar-border/70 px-2.5 py-1"
+                            >
+                                <GraduationCapIcon class="mt-px h-3 w-3" />
+                                {{ courseYearLabel(course.year) }}
                             </span>
                             <span
                                 class="flex items-center gap-2 rounded-full border border-sidebar-border/70 px-2.5 py-1"
