@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
+    // Ouvre dans un nouvel onglet (lien hors application, ex. écran TV).
+    external?: boolean;
 };

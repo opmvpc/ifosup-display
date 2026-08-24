@@ -91,6 +91,7 @@ const footerNavItems: NavItem[] = [
         title: 'Écran TV',
         href: '/screen',
         icon: Tv,
+        external: true,
     },
 ];
 </script>
