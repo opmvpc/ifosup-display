@@ -22,16 +22,28 @@ informaticien. Exigences :
 
 ## Critères d'acceptation
 
-- [ ] Route(s) `/docs` derrière `auth`, lien dans la sidebar de l'application
-- [ ] Un chapitre par grande fonctionnalité (ressources, planning, import
-      Excel, slides écran, écran TV, utilisateurs)
-- [ ] Sidebar gauche (chapitres) + « Sur cette page » à droite (ancres)
-- [ ] Langage non technique, français
-- [ ] Captures d'écran des écrans principaux
-- [ ] Diagrammes/infographies pour les flux clés (ex. du planning à la TV)
-- [ ] Tests de fumée des routes docs, lint et types au vert
+- [x] Route `/docs/{page?}` derrière `auth`, lien « Documentation » dans le
+      pied de la sidebar
+- [x] Sept chapitres : Bien démarrer, Ressources, Planning, Import Excel,
+      Slides, Télévision, Utilisateurs
+- [x] Sidebar gauche (chapitres) + « Sur cette page » à droite (ancres h2,
+      surlignage au scroll via IntersectionObserver), précédent/suivant
+- [x] Langage non technique, français ; avertissements appuyés sur les
+      opérations destructives (suppressions sans corbeille, remplacements en
+      masse, purge d'import)
+- [ ] Captures d'écran des écrans principaux — **différé** : la capture exige
+      la pane navigateur affichée côté client ; le composant `DocsImage` est
+      prêt à les accueillir
+- [x] Trois infographies SVG (déléguées à un agent Opus, relues — une durée
+      corrigée de 10 s à 5 s) : flux planning→TV, boucle des slides, import
+- [x] 10 tests de fumée des routes docs ; suite complète **303 tests verts**,
+      types/lint/format OK
 
 ## Journal du ticket
 
-- 2026-08-25 — création, conception en cours sur `feat/retours-directrice`
-  (ou branche dédiée selon l'ampleur).
+- 2026-08-25 — création, implémentation sur `feat/retours-directrice`.
+  Recherche des fonctionnalités déléguée à un agent Explore
+  (`docs/research/ifo-019-fonctionnalites-ui.md`), diagrammes à un agent
+  Opus. Rédaction, layout et intégration par l'orchestrateur. Vérifié en
+  réel dans la stack dev (chapitres, TOC, diagrammes rendus). Restent les
+  captures d'écran.

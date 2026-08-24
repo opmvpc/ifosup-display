@@ -9,10 +9,13 @@ Première recette utilisateur par la directrice ⇒ retours traités sur la bran
 tris alphabétiques/naturels partout, année d'étude sur les cours (affichée
 jusqu'au planning TV), ratio des médias de slides conservé (`object-contain`
 sur fond `#1e2d55`), et `CourseCatalogSeeder` manuel pour remplir le catalogue
-IFOSUP sur le serveur. 293 tests verts, lint OK. Reste : PR + merge + déploiement,
-puis lancer le seeder en prod. Chantier suivant :
-[IFO-019](tickets/IFO-019-documentation-integree.md), documentation intégrée à
-l'application pour les utilisateurs connectés.
+IFOSUP sur le serveur. La **documentation intégrée**
+([IFO-019](tickets/IFO-019-documentation-integree.md)) est également sur la
+branche : `/docs` (auth), sept chapitres non techniques, sidebar de chapitres +
+« Sur cette page », trois infographies SVG. **303 tests verts**, lint/types OK.
+Reste : captures d'écran de la doc (pane navigateur requise), PR + merge +
+déploiement, puis lancer `php artisan db:seed --class=CourseCatalogSeeder` en
+prod.
 
 ## Hotfix en cours (2026-08-24)
 
