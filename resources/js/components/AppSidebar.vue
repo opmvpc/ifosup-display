@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import {
     BookOpen,
+    CircleHelp,
     GraduationCap,
     DoorOpen,
     UsersRound,
@@ -81,6 +82,11 @@ const adminNavItems: NavItem[] = [
 ];
 
 const footerNavItems: NavItem[] = [
+    {
+        title: 'Documentation',
+        href: '/docs',
+        icon: CircleHelp,
+    },
     {
         title: 'Écran TV',
         href: '/screen',
