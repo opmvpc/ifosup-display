@@ -24,6 +24,7 @@ class UpdateCourseRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:courses,code,'.$this->route('course')->id,
+            'year' => 'nullable|integer|in:1,2,3',
             'teacher_id' => 'nullable|exists:teachers,id',
             'groups' => 'array',
             'groups.*' => 'exists:groups,id',
@@ -45,6 +46,8 @@ class UpdateCourseRequest extends FormRequest
             'code.string' => 'Le code du cours doit être une chaîne de caractères.',
             'code.max' => 'Le code du cours ne peut pas dépasser 50 caractères.',
             'code.unique' => 'Ce code de cours est déjà utilisé.',
+            'year.integer' => "L'année doit être un nombre.",
+            'year.in' => "L'année doit être 1, 2 ou 3.",
             'teacher_id.required' => "L'ID de l'enseignant est requis.",
             'teacher_id.exists' => "L'ID de l'enseignant doit correspondre à un enseignant existant.",
             'groups.array' => "Les groupes doivent être un tableau d'IDs de groupes.",

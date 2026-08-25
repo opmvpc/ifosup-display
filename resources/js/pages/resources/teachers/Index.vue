@@ -6,6 +6,7 @@ import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { teacherAvatar } from '@/lib/avatars';
 
 const props = defineProps<{
     teachers: Teacher[];
@@ -19,10 +20,6 @@ const filteredTeachers = computed(() => {
     if (!q) return props.teachers;
     return props.teachers.filter((t) => t.name.toLowerCase().includes(q));
 });
-
-const getAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(name)}`;
-};
 </script>
 
 <template>
@@ -51,7 +48,7 @@ const getAvatarUrl = (name: string) => {
                 :key="teacher.id"
                 :href="actions.show(teacher.id).url"
                 :title="teacher.name"
-                :image="getAvatarUrl(teacher.name)"
+                :image="teacherAvatar(teacher.name)"
             >
             </ResourceListItem>
             <p

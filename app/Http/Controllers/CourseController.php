@@ -28,8 +28,8 @@ class CourseController extends Controller
      */
     public function create()
     {
-        $teachers = Teacher::all();
-        $groups = Group::all();
+        $teachers = Teacher::orderBy('name')->get();
+        $groups = Group::orderBy('name')->get();
 
         return Inertia::render('resources/courses/Create', [
             'teachers' => $teachers,
@@ -76,8 +76,8 @@ class CourseController extends Controller
     {
         $course->load('groups', 'teacher');
 
-        $teachers = Teacher::all();
-        $groups = Group::all();
+        $teachers = Teacher::orderBy('name')->get();
+        $groups = Group::orderBy('name')->get();
 
         return Inertia::render('resources/courses/Edit', [
             'course' => $course,

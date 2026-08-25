@@ -17,7 +17,9 @@ withDefaults(defineProps<Props>(), {
 <template>
     <AppShell variant="sidebar">
         <AppSidebar />
-        <AppContent variant="sidebar" class="overflow-x-hidden">
+        <!-- overflow-x-clip (et non hidden) : hidden créerait un conteneur de
+             défilement qui casse les position:sticky des pages (doc). -->
+        <AppContent variant="sidebar" class="overflow-x-clip">
             <AppSidebarHeader :breadcrumbs="breadcrumbs" />
             <slot />
         </AppContent>

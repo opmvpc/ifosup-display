@@ -1,6 +1,22 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-08-24_
+_Dernière mise à jour : 2026-08-25_
+
+## En cours (2026-08-24/25)
+
+Première recette utilisateur par la directrice ⇒ retours traités sur la branche
+`feat/retours-directrice` ([IFO-018](tickets/IFO-018-retours-directrice.md)) :
+tris alphabétiques/naturels partout, année d'étude sur les cours (affichée
+jusqu'au planning TV), ratio des médias de slides conservé (`object-contain`
+sur fond `#1e2d55`), et `CourseCatalogSeeder` manuel pour remplir le catalogue
+IFOSUP sur le serveur. La **documentation intégrée**
+([IFO-019](tickets/IFO-019-documentation-integree.md)) est également sur la
+branche, **terminée** : `/docs` (auth), sept chapitres non techniques, sidebar
+de chapitres + « Sur cette page », trois infographies SVG, sept captures
+d'écran, structure du fichier d'import documentée avec modèle xlsx
+téléchargeable. **304 tests verts**, lint/types OK.
+Reste : PR + merge + déploiement, puis lancer
+`php artisan db:seed --class=CourseCatalogSeeder` en prod.
 
 ## Hotfix en cours (2026-08-24)
 
@@ -68,6 +84,9 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-015](tickets/IFO-015-durcissements-differes.md) | Durcissements de l'audit croisé (12/14, deux restes assumés) | terminé |
 | [IFO-016](tickets/IFO-016-favicon-og-appname.md) | Favicon de marque, carte OG, nom d'application en dur | terminé |
 | [IFO-017](tickets/IFO-017-storage-link-non-root.md) | Médias de slides en 404 (storage:link vs non-root) | **en vérification** |
+| [IFO-018](tickets/IFO-018-retours-directrice.md) | Retours directrice (tris, année de cours, ratio médias, seeder) | **en-cours** |
+| [IFO-019](tickets/IFO-019-documentation-integree.md) | Documentation intégrée pour les utilisateurs | terminé |
+| [IFO-020](tickets/IFO-020-retours-thibault-ui.md) | Retours UI (avatars locaux, sticky doc, tri, drag & drop slides) | terminé |
 
 ## Décisions
 

@@ -46,6 +46,18 @@ describe('create', function () {
                 ->has('groups')
             );
     });
+
+    it('trie les enseignants du formulaire par ordre alphabétique', function () {
+        actingAsUser();
+        Teacher::factory()->create(['name' => 'Zoé Wallon']);
+        Teacher::factory()->create(['name' => 'Alice Martin']);
+
+        $response = $this->get(route('courses.create'))->assertOk();
+
+        $names = collect($response->viewData('page')['props']['teachers'])->pluck('name')->all();
+
+        expect($names)->toBe(['Alice Martin', 'Zoé Wallon']);
+    });
 });
 
 describe('store', function () {
@@ -77,6 +89,31 @@ describe('store', function () {
 
         $response->assertRedirect();
         $this->assertDatabaseHas('courses', ['code' => 'X-1', 'teacher_id' => null]);
+    });
+
+    it("crée un cours avec une année d'étude", function () {
+        actingAsUser();
+
+        $response = $this->post(route('courses.store'), [
+            'name' => 'Maths',
+            'code' => 'X-1',
+            'year' => 2,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('courses', ['code' => 'X-1', 'year' => 2]);
+    });
+
+    it('refuse une année hors de 1, 2, 3', function () {
+        actingAsUser();
+
+        $response = $this->post(route('courses.store'), [
+            'name' => 'Maths',
+            'code' => 'X-1',
+            'year' => 4,
+        ]);
+
+        $response->assertSessionHasErrors('year');
     });
 
     it("refuse la création d'un cours sans nom", function () {
@@ -206,6 +243,19 @@ describe('update', function () {
         ]);
 
         $response->assertSessionHasErrors('code');
+    });
+
+    it("met à jour l'année d'un cours", function () {
+        actingAsUser();
+        $course = Course::factory()->create(['year' => 1]);
+
+        $this->put(route('courses.update', $course), [
+            'name' => $course->name,
+            'code' => $course->code,
+            'year' => 3,
+        ]);
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'year' => 3]);
     });
 
     it("resynchronise les groupes d'un cours à la mise à jour", function () {

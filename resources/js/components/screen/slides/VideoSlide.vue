@@ -1,8 +1,8 @@
 <template>
-    <div class="h-full w-full bg-black">
+    <div class="h-full w-full bg-[#1e2d55]">
         <video
             ref="videoPlayer"
-            class="h-full w-full object-cover"
+            class="h-full w-full object-contain"
             autoplay
             muted
             playsinline

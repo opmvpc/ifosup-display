@@ -13,6 +13,12 @@ const props = defineProps<{
     teachers: Teacher[];
     groups: Group[];
 }>();
+
+const yearOptions = [
+    { id: 1, name: '1ère année' },
+    { id: 2, name: '2e année' },
+    { id: 3, name: '3e année' },
+];
 </script>
 
 <template>
@@ -47,6 +53,17 @@ const props = defineProps<{
                     placeholder="Nom du cours"
                 />
                 <InputError class="mt-2" :message="errors.name" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="year">Année</Label>
+                <Combobox
+                    :options="yearOptions"
+                    placeholder="Sélectionner une année"
+                    name="year"
+                    valueKey="id"
+                    :displayFunction="(opt) => opt.name"
+                />
+                <InputError class="mt-2" :message="errors.year" />
             </div>
             <div class="grid gap-2">
                 <Label for="teacher">Enseignant</Label>

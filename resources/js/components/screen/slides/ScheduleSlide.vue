@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { courseYearLabel } from '@/lib/courseYear';
+import { compareRoomNames } from '@/lib/rooms';
 
 interface ScheduleRowGroup {
     name: string;
@@ -12,6 +14,7 @@ interface ScheduleRowTeacher {
 interface ScheduleRowCourse {
     name: string;
     code?: string | null;
+    year?: number | null;
     teacher?: ScheduleRowTeacher | null;
     groups?: ScheduleRowGroup[];
 }
@@ -52,23 +55,17 @@ function updateTimeLabel() {
 
 const title = computed<string>(() => props.data?.title ?? 'Planning des cours');
 
-function compareRooms(a: string, b: string) {
-    const isInt = (s: string) => /^-?\d+$/.test(s);
-    const na = parseInt(a, 10),
-        nb = parseInt(b, 10);
-    const group = (s: string, n: number) => (!isInt(s) ? 2 : n < 0 ? 0 : 1);
-    const ga = group(a, na),
-        gb = group(b, nb);
-    if (ga !== gb) return ga - gb;
-    if (ga === 0) return Math.abs(na) - Math.abs(nb);
-    if (ga === 1) return na - nb;
-    return a.localeCompare(b);
+function courseSubtitle(course: ScheduleRowCourse | null | undefined) {
+    if (!course) return '';
+    return [course.code, courseYearLabel(course.year)]
+        .filter(Boolean)
+        .join(' · ');
 }
 
 const sortedRows = computed(() => {
     const rows: ScheduleRow[] = props.data?.rows ?? [];
     return [...rows].sort((a, b) =>
-        compareRooms(a.room?.name ?? '', b.room?.name ?? ''),
+        compareRoomNames(a.room?.name ?? '', b.room?.name ?? ''),
     );
 });
 
@@ -252,7 +249,7 @@ onUnmounted(() => {
                                 {{ row.course?.name }}
                             </p>
                             <p
-                                v-if="row.course?.code"
+                                v-if="courseSubtitle(row.course)"
                                 class="mt-2 text-base leading-none font-bold tracking-widest uppercase italic"
                                 :class="
                                     row.status === 'cancelled'
@@ -260,7 +257,7 @@ onUnmounted(() => {
                                         : 'text-[#1e2d55]'
                                 "
                             >
-                                {{ row.course.code }}
+                                {{ courseSubtitle(row.course) }}
                             </p>
                         </div>
 

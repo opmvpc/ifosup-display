@@ -2,16 +2,13 @@
 import actions from '@/actions/App/Http/Controllers/RoomController';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceShowLayout from '@/layouts/resources/ResourceShowLayout.vue';
+import { roomAvatar } from '@/lib/avatars';
 
 const props = defineProps<{
     room: Room;
 }>();
 
 const routes = useResourceRoutes(props.room.id, actions);
-
-const getAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(name)}`;
-};
 </script>
 
 <template>
@@ -26,7 +23,7 @@ const getAvatarUrl = (name: string) => {
         >
             <div class="flex items-center gap-6 p-6">
                 <img
-                    :src="getAvatarUrl(room.name)"
+                    :src="roomAvatar(room.name)"
                     :alt="room.name"
                     class="h-20 w-20 shrink-0 rounded-2xl border border-sidebar-border/80 bg-white/70 p-1 dark:bg-zinc-800/70"
                 />

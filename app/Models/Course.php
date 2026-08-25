@@ -11,7 +11,11 @@ class Course extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['code', 'name', 'teacher_id'];
+    protected $fillable = ['code', 'name', 'year', 'teacher_id'];
+
+    protected $casts = [
+        'year' => 'integer',
+    ];
 
     public function teacher(): BelongsTo
     {

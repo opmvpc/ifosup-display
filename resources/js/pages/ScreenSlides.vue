@@ -5,6 +5,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock,
+    GripVertical,
     Image as ImageIcon,
     Lock,
     Play,
@@ -463,6 +464,136 @@ const moveSlide = (slide: ScreenSlideItem, direction: -1 | 1) => {
     void reorderSlides(working);
 };
 
+// --- Glisser-deposer ---------------------------------------------------------
+// La carte n'est rendue `draggable` qu'apres appui sur la poignee : cela evite
+// que les boutons, l'image ou la video de la vignette ne declenchent un drag.
+const armedSlideId = ref<number | null>(null);
+const draggedSlideId = ref<number | null>(null);
+// Index d'insertion (0..n) dans `sortedSlides` : la barre s'affiche a gauche de
+// la carte portant cet index, ou a droite de la derniere carte.
+const dropIndex = ref<number | null>(null);
+// Le slide verrouille doit rester premier : deposer avant lui est refuse.
+const isRejectingDrop = ref(false);
+
+const armDrag = (slide: ScreenSlideItem) => {
+    if (slide.is_locked) {
+        return;
+    }
+
+    armedSlideId.value = slide.id;
+};
+
+const disarmDrag = () => {
+    armedSlideId.value = null;
+};
+
+const resetDragState = () => {
+    armedSlideId.value = null;
+    draggedSlideId.value = null;
+    dropIndex.value = null;
+    isRejectingDrop.value = false;
+};
+
+const onSlideDragStart = (slide: ScreenSlideItem, event: DragEvent) => {
+    if (slide.is_locked || armedSlideId.value !== slide.id) {
+        event.preventDefault();
+        return;
+    }
+
+    draggedSlideId.value = slide.id;
+    dropIndex.value = null;
+    isRejectingDrop.value = false;
+
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(slide.id));
+    }
+};
+
+const onSlideDragOver = (index: number, event: DragEvent) => {
+    if (draggedSlideId.value === null) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const dropBefore = event.clientX < rect.left + rect.width / 2;
+    const target = Math.min(
+        dropBefore ? index : index + 1,
+        sortedSlides.value.length,
+    );
+
+    // Position 0 reservee au slide de bienvenue.
+    if (target < 1) {
+        dropIndex.value = null;
+        isRejectingDrop.value = true;
+
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = 'none';
+        }
+
+        return;
+    }
+
+    dropIndex.value = target;
+    isRejectingDrop.value = false;
+
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+    }
+};
+
+const onGridDragLeave = (event: DragEvent) => {
+    const nextTarget = event.relatedTarget;
+    const container = event.currentTarget as HTMLElement;
+
+    if (nextTarget instanceof Node && container.contains(nextTarget)) {
+        return;
+    }
+
+    dropIndex.value = null;
+    isRejectingDrop.value = false;
+};
+
+const onSlideDrop = (event: DragEvent) => {
+    event.preventDefault();
+
+    const slideId = draggedSlideId.value;
+    const target = dropIndex.value;
+
+    if (slideId === null || target === null) {
+        resetDragState();
+        return;
+    }
+
+    const working = [...sortedSlides.value];
+    const fromIndex = working.findIndex((slide) => slide.id === slideId);
+
+    if (fromIndex === -1) {
+        resetDragState();
+        return;
+    }
+
+    const toIndex = target > fromIndex ? target - 1 : target;
+    resetDragState();
+
+    if (toIndex === fromIndex) {
+        return;
+    }
+
+    const [moved] = working.splice(fromIndex, 1);
+    working.splice(toIndex, 0, moved);
+
+    void reorderSlides(working);
+};
+
+const isDraggedSlide = (slide: ScreenSlideItem) =>
+    draggedSlideId.value === slide.id;
+
+const isRejectedTarget = (index: number) =>
+    index === 0 && isRejectingDrop.value && draggedSlideId.value !== null;
+
 const slideTypeLabel = (type: SlideType) => {
     if (type === 'welcome') return 'Bienvenue';
     if (type === 'schedule') return 'Planning';
@@ -518,7 +649,9 @@ const durationLabel = (slide: ScreenSlideItem) => {
                         <p class="text-sm text-zinc-500 dark:text-zinc-400">
                             Ajoutez, modifiez ou supprimez des slides d'images,
                             vidéos ou planning sur l'écran de la télé et
-                            configurez leurs paramètres.
+                            configurez leurs paramètres. Glissez les vignettes
+                            (ou utilisez les flèches) pour changer leur ordre de
+                            passage.
                         </p>
                     </div>
 
@@ -526,20 +659,65 @@ const durationLabel = (slide: ScreenSlideItem) => {
                 </div>
 
                 <div class="pb-4">
-                    <div
+                    <TransitionGroup
+                        tag="div"
+                        move-class="slide-move"
                         class="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3"
+                        @dragleave="onGridDragLeave"
                     >
                         <div
                             v-for="(slide, index) in sortedSlides"
                             :key="slide.id"
-                            class="w-full"
+                            class="group/slide relative w-full transition-[opacity,transform] duration-200"
+                            :class="
+                                isDraggedSlide(slide)
+                                    ? 'scale-[0.97] opacity-40'
+                                    : ''
+                            "
+                            :draggable="armedSlideId === slide.id"
+                            @dragstart="onSlideDragStart(slide, $event)"
+                            @dragend="resetDragState"
+                            @dragover="onSlideDragOver(index, $event)"
+                            @drop="onSlideDrop"
                         >
+                            <span
+                                v-if="dropIndex === index"
+                                aria-hidden="true"
+                                class="pointer-events-none absolute inset-y-0 -left-2.5 z-10 w-1 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.15)] dark:bg-blue-400"
+                            />
+                            <span
+                                v-if="
+                                    index === sortedSlides.length - 1 &&
+                                    dropIndex === sortedSlides.length
+                                "
+                                aria-hidden="true"
+                                class="pointer-events-none absolute inset-y-0 -right-2.5 z-10 w-1 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.15)] dark:bg-blue-400"
+                            />
+
                             <div
                                 class="mb-2 flex items-center justify-between gap-2"
                             >
                                 <div
                                     class="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400"
                                 >
+                                    <button
+                                        v-if="!slide.is_locked"
+                                        type="button"
+                                        tabindex="-1"
+                                        class="-ml-1 inline-flex h-5 w-4 cursor-grab items-center justify-center rounded text-zinc-400 opacity-0 transition-opacity group-hover/slide:opacity-100 active:cursor-grabbing dark:text-zinc-500"
+                                        :class="
+                                            isDraggedSlide(slide)
+                                                ? 'opacity-100'
+                                                : ''
+                                        "
+                                        :aria-label="`Glisser pour déplacer le slide ${slideTypeLabel(slide.type)} en position ${slide.position + 1}`"
+                                        title="Glisser-déposer pour réordonner"
+                                        @pointerdown="armDrag(slide)"
+                                        @pointerup="disarmDrag"
+                                        @pointercancel="disarmDrag"
+                                    >
+                                        <GripVertical class="h-3.5 w-3.5" />
+                                    </button>
                                     <Lock
                                         v-if="slide.is_locked"
                                         class="h-3.5 w-3.5"
@@ -593,7 +771,12 @@ const durationLabel = (slide: ScreenSlideItem) => {
                             </div>
 
                             <div
-                                class="aspect-video overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800"
+                                class="aspect-video overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 transition-shadow dark:border-zinc-700 dark:bg-zinc-800"
+                                :class="
+                                    isRejectedTarget(index)
+                                        ? 'ring-2 ring-red-400 dark:ring-red-500'
+                                        : ''
+                                "
                             >
                                 <div
                                     v-if="slide.type === 'welcome'"
@@ -628,17 +811,19 @@ const durationLabel = (slide: ScreenSlideItem) => {
                                     "
                                     :src="slide.image_url"
                                     alt="Apercu image"
-                                    class="h-full w-full object-cover"
+                                    draggable="false"
+                                    class="h-full w-full bg-[#1e2d55] object-contain"
                                 />
 
                                 <div
                                     v-else-if="slide.type === 'video'"
-                                    class="relative h-full w-full bg-black"
+                                    class="relative h-full w-full bg-[#1e2d55]"
                                 >
                                     <video
                                         v-if="slide.video_url"
                                         :src="slide.video_url"
-                                        class="h-full w-full object-cover"
+                                        class="h-full w-full object-contain"
+                                        draggable="false"
                                         muted
                                         preload="metadata"
                                         @loadedmetadata="
@@ -674,7 +859,14 @@ const durationLabel = (slide: ScreenSlideItem) => {
                             </p>
                         </div>
 
-                        <div class="w-full">
+                        <div
+                            key="add-slide"
+                            class="w-full"
+                            @dragover="
+                                onSlideDragOver(sortedSlides.length, $event)
+                            "
+                            @drop="onSlideDrop"
+                        >
                             <div class="mb-2 h-6"></div>
                             <button
                                 type="button"
@@ -692,7 +884,7 @@ const durationLabel = (slide: ScreenSlideItem) => {
                                 </div>
                             </button>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
             </div>
         </div>
@@ -902,3 +1094,10 @@ const durationLabel = (slide: ScreenSlideItem) => {
         </Dialog>
     </AppLayout>
 </template>
+
+<style scoped>
+/* Transition FLIP appliquee par TransitionGroup lors du reordonnancement. */
+.slide-move {
+    transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+</style>
