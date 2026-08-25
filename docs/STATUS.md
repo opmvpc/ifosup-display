@@ -86,6 +86,7 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-017](tickets/IFO-017-storage-link-non-root.md) | Médias de slides en 404 (storage:link vs non-root) | **en vérification** |
 | [IFO-018](tickets/IFO-018-retours-directrice.md) | Retours directrice (tris, année de cours, ratio médias, seeder) | **en-cours** |
 | [IFO-019](tickets/IFO-019-documentation-integree.md) | Documentation intégrée pour les utilisateurs | terminé |
+| [IFO-020](tickets/IFO-020-retours-thibault-ui.md) | Retours UI (avatars locaux, sticky doc, tri, drag & drop slides) | terminé |
 
 ## Décisions
 
