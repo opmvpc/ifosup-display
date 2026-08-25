@@ -66,9 +66,12 @@ import DocsLayout from '@/layouts/docs/DocsLayout.vue';
                 fichier pour une vidéo ;
             </li>
             <li>
-                <strong>Réordonner</strong> — les flèches gauche/droite
-                déplacent la vignette dans l'ordre de passage (sauf Bienvenue,
-                verrouillé en tête) ;
+                <strong>Réordonner</strong> — attrapez une vignette par sa
+                poignée (les petits points qui apparaissent en haut à gauche au
+                survol) et faites-la glisser à l'endroit voulu : un trait bleu
+                indique où elle se posera. Les flèches gauche/droite font la
+                même chose, un cran à la fois. Dans les deux cas, Bienvenue
+                reste verrouillé en tête et rien ne peut être placé avant lui ;
             </li>
             <li>
                 <strong>Supprimer</strong> — l'icône corbeille, avec
