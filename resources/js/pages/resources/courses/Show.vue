@@ -12,6 +12,7 @@ import teacherActions from '@/actions/App/Http/Controllers/TeacherController';
 import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceShowLayout from '@/layouts/resources/ResourceShowLayout.vue';
+import { courseAvatar, groupAvatar, teacherAvatar } from '@/lib/avatars';
 import { courseYearLabel } from '@/lib/courseYear';
 
 const props = defineProps<{
@@ -20,18 +21,6 @@ const props = defineProps<{
 
 const routes = useResourceRoutes(props.course.id, actions);
 const groups = props.course.groups ?? [];
-
-const getCourseAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`;
-};
-
-const getTeacherAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(name)}`;
-};
-
-const getGroupAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(name)}`;
-};
 </script>
 
 <template>
@@ -47,7 +36,7 @@ const getGroupAvatarUrl = (name: string) => {
             >
                 <div class="flex items-start gap-6 p-6">
                     <img
-                        :src="getCourseAvatarUrl(course.code)"
+                        :src="courseAvatar(course.code)"
                         :alt="course.name"
                         class="h-20 w-20 shrink-0 rounded-2xl border border-sidebar-border/80 bg-white/70 p-1 dark:bg-zinc-800/70"
                     />
@@ -99,7 +88,7 @@ const getGroupAvatarUrl = (name: string) => {
                     v-if="course.teacher"
                     :href="teacherActions.show(course.teacher.id).url"
                     :title="course.teacher.name"
-                    :image="getTeacherAvatarUrl(course.teacher.name)"
+                    :image="teacherAvatar(course.teacher.name)"
                 />
 
                 <div
@@ -126,7 +115,7 @@ const getGroupAvatarUrl = (name: string) => {
                         :key="group.id"
                         :href="groupActions.show(group.id).url"
                         :title="group.name"
-                        :image="getGroupAvatarUrl(group.name)"
+                        :image="groupAvatar(group.name)"
                     >
                     </ResourceListItem>
                 </div>

@@ -7,6 +7,7 @@ import ResourceListItemData from '@/components/resources/ResourceListItemData.vu
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { courseAvatar } from '@/lib/avatars';
 import { courseYearLabel } from '@/lib/courseYear';
 
 const props = defineProps<{
@@ -25,10 +26,6 @@ const filteredCourses = computed(() => {
             c.name.toLowerCase().includes(q),
     );
 });
-
-const getAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`;
-};
 </script>
 
 <template>
@@ -57,7 +54,7 @@ const getAvatarUrl = (name: string) => {
                 :key="course.id"
                 :href="actions.show(course.id).url"
                 :title="course.code"
-                :image="getAvatarUrl(course.code)"
+                :image="courseAvatar(course.code)"
             >
                 <ResourceListItemData>{{ course.name }}</ResourceListItemData>
                 <ResourceListItemData v-if="courseYearLabel(course.year)">

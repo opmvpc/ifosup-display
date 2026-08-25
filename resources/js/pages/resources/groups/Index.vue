@@ -6,6 +6,7 @@ import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { groupAvatar } from '@/lib/avatars';
 
 const props = defineProps<{
     groups: Group[];
@@ -19,10 +20,6 @@ const filteredGroups = computed(() => {
     if (!q) return props.groups;
     return props.groups.filter((g) => g.name.toLowerCase().includes(q));
 });
-
-const getAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(name)}`;
-};
 </script>
 
 <template>
@@ -51,7 +48,7 @@ const getAvatarUrl = (name: string) => {
                 :key="group.id"
                 :href="actions.show(group.id).url"
                 :title="group.name"
-                :image="getAvatarUrl(group.name)"
+                :image="groupAvatar(group.name)"
             >
             </ResourceListItem>
             <p

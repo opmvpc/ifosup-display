@@ -6,6 +6,7 @@ import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { userAvatar } from '@/lib/avatars';
 
 const props = defineProps<{
     users: { id: number; name: string; email: string; created_at: string }[];
@@ -52,6 +53,7 @@ const filteredUsers = computed(() => {
                 :key="user.id"
                 :href="actions.show(user.id).url"
                 :title="user.name"
+                :image="userAvatar(user.email)"
             >
                 <span class="text-xs text-zinc-400">{{ user.email }}</span>
             </ResourceListItem>

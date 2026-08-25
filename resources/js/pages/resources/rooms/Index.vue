@@ -6,6 +6,7 @@ import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { Input } from '@/components/ui/input';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceIndexLayout from '@/layouts/resources/ResourceIndexLayout.vue';
+import { roomAvatar } from '@/lib/avatars';
 import { compareRoomNames } from '@/lib/rooms';
 
 const props = defineProps<{
@@ -24,10 +25,6 @@ const filteredRooms = computed(() => {
     if (!q) return sortedRooms.value;
     return sortedRooms.value.filter((r) => r.name.toLowerCase().includes(q));
 });
-
-const getAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(name)}`;
-};
 </script>
 
 <template>
@@ -56,7 +53,7 @@ const getAvatarUrl = (name: string) => {
                 :key="room.id"
                 :href="actions.show(room.id).url"
                 :title="room.name"
-                :image="getAvatarUrl(room.name)"
+                :image="roomAvatar(room.name)"
             >
             </ResourceListItem>
             <p
