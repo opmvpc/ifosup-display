@@ -68,6 +68,7 @@ const defaultYear =
                     placeholder="Sélectionner une année"
                     name="year"
                     valueKey="id"
+                    clearable
                     :displayFunction="(opt) => opt.name"
                     :default-value="defaultYear"
                 />
