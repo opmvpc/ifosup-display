@@ -4,6 +4,7 @@ namespace Tests\Support;
 
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -34,6 +35,18 @@ trait CreatesSchedulerFixture
                 $sheet->setCellValue([$col, $row], $value);
             }
         }
+    }
+
+    /**
+     * Pose une vraie date Excel (valeur numérique + format de date), comme dans les
+     * plannings réels de l'école où la ligne de dates contient des cellules datées
+     * « dd/mm » dont l'année est portée par le fichier.
+     */
+    public function setDateCell(Worksheet $sheet, int $col, int $row, string $date): void
+    {
+        $sheet->setCellValue([$col, $row], ExcelDate::PHPToExcel(new \DateTimeImmutable($date)));
+        $coordinate = Coordinate::stringFromColumnIndex($col).$row;
+        $sheet->getStyle($coordinate)->getNumberFormat()->setFormatCode('dd/mm');
     }
 
     /**

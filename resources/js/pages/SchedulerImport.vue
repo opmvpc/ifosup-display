@@ -103,9 +103,12 @@ const importError = ref<string | null>(null);
 // ─── Upload form ──────────────────────────────────────────────────────────────
 
 const currentYear = new Date().getFullYear();
-// Default to current school year: if we're past August, start year = current year, else current year - 1
+// Année scolaire courante par défaut : à partir d'août (mois 7, indexé à 0),
+// c'est l'année en cours ; avant, l'année précédente. Le `>= 8` d'origine
+// excluait août : un import fait fin août proposait l'année scolaire passée,
+// et tout le planning 2026-2027 a été créé en 2025-2026 en production.
 const defaultStartYear =
-    new Date().getMonth() >= 8 ? currentYear : currentYear - 1;
+    new Date().getMonth() >= 7 ? currentYear : currentYear - 1;
 const uploadForm = useForm({
     file: null as File | null,
     start_year: defaultStartYear,
@@ -290,6 +293,16 @@ const skippedCount = computed(() => {
         selectedTotal.value.new -
         selectedTotal.value.replaced
     );
+});
+
+// Toute la plage du fichier est déjà passée : presque toujours une mauvaise
+// année scolaire choisie à l'upload (l'import créerait des cours invisibles
+// dans le planning courant).
+const importInPast = computed(() => {
+    if (!summary.value?.date_to) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(summary.value.date_to) < today;
 });
 
 const selectedConflicts = computed(() => {
@@ -540,6 +553,24 @@ const periodLabels: Record<string, string> = {
                         <ChevronLeft class="size-3.5" /> Annuler
                     </button>
                 </div>
+
+                <!-- Période entièrement passée : très probablement une mauvaise année -->
+                <Alert v-if="importInPast" variant="destructive">
+                    <AlertCircle class="size-4" />
+                    <AlertTitle> Cette période est déjà passée ! </AlertTitle>
+                    <AlertDescription>
+                        Toutes les dates du fichier ({{
+                            formatDate(summary.date_from)
+                        }}
+                        → {{ formatDate(summary.date_to) }}) sont antérieures à
+                        aujourd'hui : les cours importés n'apparaîtraient pas
+                        dans le planning actuel. Vérifiez l'année scolaire
+                        choisie ({{ summary.start_year }}–{{
+                            summary.start_year + 1
+                        }}) — annulez et rechargez le fichier avec la bonne
+                        année si besoin.
+                    </AlertDescription>
+                </Alert>
 
                 <!-- Impact stats -->
                 <div class="grid grid-cols-3 gap-3">

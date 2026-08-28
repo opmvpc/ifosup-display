@@ -233,6 +233,79 @@ it('ignore une cellule cours non vide dans une colonne sans date mappée', funct
     expect($result[0]['course'])->toBe('A');
 });
 
+it('prend l\'année des cellules de date réelles du fichier, même si l\'année du formulaire est fausse', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B'],
+    ]);
+    test()->setDateCell($sheet, 3, 2, '2026-08-31');
+    test()->setDateCell($sheet, 4, 2, '2026-09-07');
+
+    $result = parseWorkbook($spreadsheet, 2025);
+
+    expect(array_column($result, 'date'))->toBe(['2026-08-31', '2026-09-07']);
+});
+
+it('recale une première cellule de date texte sur la date réelle qui la suit', function () {
+    // Structure du planning réel : la première colonne de dates est du texte
+    // (« 24/08 ») et les suivantes de vraies dates Excel portant l'année.
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '24/08'],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B', 5 => 'C'],
+    ]);
+    test()->setDateCell($sheet, 4, 2, '2026-08-31');
+    test()->setDateCell($sheet, 5, 2, '2026-09-07');
+
+    $result = parseWorkbook($spreadsheet, 2025);
+
+    expect(array_column($result, 'date'))->toBe(['2026-08-24', '2026-08-31', '2026-09-07']);
+});
+
+it('continue à déduire par +7 jours une cellule texte qui suit une date réelle', function () {
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [4 => '07/09'],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B'],
+    ]);
+    test()->setDateCell($sheet, 3, 2, '2026-08-31');
+
+    $result = parseWorkbook($spreadsheet, 2025);
+
+    expect(array_column($result, 'date'))->toBe(['2026-08-31', '2026-09-07']);
+});
+
+it('reconnaît l\'en-tête SAMEDI comme un bloc du matin', function () {
+    // La feuille SAMEDI du planning réel n'a ni « matin », ni « midi », ni
+    // « soir » dans son en-tête : elle était ignorée en silence. Les cours du
+    // samedi ont lieu le matin (8h30-13h).
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setTitle('SAMEDI');
+
+    test()->fillGrid($sheet, [
+        1 => [2 => 'SAMEDI'],
+        2 => [2 => '29/08'],
+        3 => [2 => '1', 3 => '2'],
+        4 => [1 => '-103', 2 => 'CEDEG'],
+    ]);
+
+    $result = parseWorkbook($spreadsheet);
+
+    expect($result)->toBe([
+        ['date' => '2025-08-29', 'period' => 'morning', 'local' => '-103', 'course' => 'CEDEG'],
+    ]);
+});
+
 it('retourne un tableau vide pour une feuille sans en-tête reconnu', function () {
     $spreadsheet = test()->newWorkbook();
     $sheet = $spreadsheet->getActiveSheet();
