@@ -247,9 +247,7 @@ onUnmounted(() => {
                     ref="buttonRef"
                     :class="[
                         'flex cursor-pointer items-center pr-1',
-                        clearable && !multiple && proxyValue
-                            ? ''
-                            : 'ml-auto',
+                        clearable && !multiple && proxyValue ? '' : 'ml-auto',
                     ]"
                     @click="updatePosition"
                 >
