@@ -44,6 +44,11 @@ matin (8h30–13h)**.
   sur le formulaire). Les cellules texte qui précèdent une date ancrée sont recalées
   dessus (−1 semaine par colonne) ; celles qui suivent continuent en +1 semaine.
   L'année du formulaire ne sert plus que de repli pour les fichiers 100 % texte.
+  Subtilité découverte en testant sur le vrai fichier : ces cellules sont des
+  **formules** (« =C2+7 ») — les recalculer est piégeux (le moteur PhpSpreadsheet
+  évalue le texte « 24/08 » comme la division 24/8 et produit des dates en 1900),
+  c'est la **valeur mise en cache par Excel** dans le fichier qui fait foi
+  (`getOldCalculatedValue()`), avec un garde-fou 2000–2100 sur l'année ancrée.
 - `SchedulerImport.vue` : alerte rouge dans l'aperçu quand toute la plage du fichier
   est antérieure à aujourd'hui (« Cette période est déjà passée ! »), avec rappel de
   l'année choisie.
@@ -59,7 +64,12 @@ matin (8h30–13h)**.
 - [x] L'aperçu alerte visiblement si toute la période est dans le passé
 - [x] Une feuille « SAMEDI » est parsée comme bloc du matin
 - [x] Tests unitaires du parser : dates réelles prioritaires, recalage de la première
-      cellule texte, +7 jours après une date réelle, en-tête SAMEDI (4 nouveaux tests)
+      cellule texte, +7 jours après une date réelle, valeur en cache des formules,
+      garde-fou sur les numériques aberrants, en-tête SAMEDI (6 nouveaux tests)
+- [x] Vérifié sur le vrai fichier dans le conteneur dev : 353 attributions,
+      2026-08-24 → 2027-06-24 **quelle que soit l'année sélectionnée** (2025 ou 2026)
+- [x] Vérifié dans le navigateur (stack dev) : le sélecteur propose « 2026–2027 »
+      par défaut un 28 août
 - [x] Suite complète verte
 
 ## Reste à faire côté prod (manuel, par Thibault)

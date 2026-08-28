@@ -50,6 +50,19 @@ trait CreatesSchedulerFixture
     }
 
     /**
+     * Pose une formule de date au format date (« dd/mm »). Le writer PhpSpreadsheet
+     * pré-calcule la formule à l'enregistrement : le fichier produit contient la
+     * formule ET sa valeur en cache, comme les plannings réels de l'école (où les
+     * dates sont des « =C2+7 » dont Excel a stocké le résultat).
+     */
+    public function setDateFormulaCell(Worksheet $sheet, int $col, int $row, string $formula): void
+    {
+        $sheet->setCellValue([$col, $row], $formula);
+        $coordinate = Coordinate::stringFromColumnIndex($col).$row;
+        $sheet->getStyle($coordinate)->getNumberFormat()->setFormatCode('dd/mm');
+    }
+
+    /**
      * Fusionne une colonne donnée sur une plage de lignes (pour simuler une cellule
      * "local" fusionnée sur plusieurs lignes).
      */

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -149,14 +150,28 @@ class SchedulerSheetParser
         $columns = [];
         for ($c = $startCol; $c <= $maxCol; $c++) {
             $cell = $sheet->getCell([$c, $row]);
-            $val = $cell->getCalculatedValue();
+
+            // Les dates du planning réel sont des formules (« =C2+7 ») : les
+            // recalculer est piégeux (le moteur évalue le texte « 24/08 » comme
+            // la division 24/8). On lit la valeur qu'Excel a mise en cache dans
+            // le fichier, et on ne recalcule qu'à défaut de cache.
+            $val = $cell->getDataType() === DataType::TYPE_FORMULA
+                ? ($cell->getOldCalculatedValue() ?? $cell->getCalculatedValue())
+                : $cell->getValue();
             if (empty($val)) {
                 continue;
             }
 
-            $anchor = is_numeric($val) && ExcelDate::isDateTime($cell)
-                ? Carbon::instance(ExcelDate::excelToDateTimeObject((float) $val))->startOfDay()
-                : null;
+            $anchor = null;
+            if (is_numeric($val) && ExcelDate::isDateTime($cell)) {
+                $candidate = Carbon::instance(ExcelDate::excelToDateTimeObject((float) $val))->startOfDay();
+                // Même bornes que la validation d'upload : un numérique au
+                // format date mais hors de toute année scolaire plausible
+                // (formule mal recalculée, reliquat de cellule) n'ancre rien.
+                if ($candidate->year >= 2000 && $candidate->year <= 2100) {
+                    $anchor = $candidate;
+                }
+            }
 
             $columns[] = ['col' => $c, 'anchor' => $anchor, 'raw' => $val];
         }

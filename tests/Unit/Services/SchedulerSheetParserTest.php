@@ -284,6 +284,43 @@ it('continue à déduire par +7 jours une cellule texte qui suit une date réell
     expect(array_column($result, 'date'))->toBe(['2026-08-31', '2026-09-07']);
 });
 
+it('lit la valeur en cache d\'une cellule de date calculée par formule', function () {
+    // Les plannings réels utilisent des formules (« =C2+7 ») : recalculer est
+    // piégeux (le moteur évalue « 24/08 » comme la division 24/8 et produit des
+    // dates en 1900), la valeur mise en cache dans le fichier fait foi.
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B'],
+    ]);
+    test()->setDateFormulaCell($sheet, 3, 2, '=DATE(2026,8,31)');
+    test()->setDateFormulaCell($sheet, 4, 2, '=DATE(2026,9,7)');
+
+    $result = parseWorkbook($spreadsheet, 2025);
+
+    expect(array_column($result, 'date'))->toBe(['2026-08-31', '2026-09-07']);
+});
+
+it('n\'ancre pas un numérique au format date hors de toute année plausible', function () {
+    // Un « 10 » au format dd/mm donnerait 1900-01-10 : on retombe sur la
+    // déduction +7 jours plutôt que d'ancrer une date absurde.
+    $spreadsheet = test()->newWorkbook();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    test()->fillGrid($sheet, [
+        1 => [3 => 'Matin'],
+        2 => [3 => '08/09', 4 => 10],
+        4 => [2 => 'Salle 101', 3 => 'A', 4 => 'B'],
+    ]);
+    $sheet->getStyle('D2')->getNumberFormat()->setFormatCode('dd/mm');
+
+    $result = parseWorkbook($spreadsheet, 2025);
+
+    expect(array_column($result, 'date'))->toBe(['2025-09-08', '2025-09-15']);
+});
+
 it('reconnaît l\'en-tête SAMEDI comme un bloc du matin', function () {
     // La feuille SAMEDI du planning réel n'a ni « matin », ni « midi », ni
     // « soir » dans son en-tête : elle était ignorée en silence. Les cours du
