@@ -1,8 +1,21 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-08-24_
+_Dernière mise à jour : 2026-08-28_
 
-## Hotfix en cours (2026-08-24)
+## Correctif en cours (2026-08-28)
+
+Premier import réel en production : succès annoncé, planning vide. Les 353
+attributions du fichier « LOCAUX XAVIER 26-27.xlsx » ont été créées **un an dans
+le passé** (24/08/2025 → 24/06/2026) : en août, le sélecteur d'année scolaire
+proposait l'année précédente par défaut (`getMonth() >= 8`, off-by-one sur les
+mois indexés à 0), et le parser ignorait les années pourtant présentes dans les
+cellules de date du fichier. Corrigé sur la branche
+`fix/ifo-018-import-annee-samedi` (défaut d'année, dates du fichier prioritaires,
+alerte « période déjà passée », feuille SAMEDI importée comme matin) :
+[IFO-018](tickets/IFO-018-import-annee-defaut-et-samedi.md). Côté prod : Thibault
+purge les attributions fantômes 2025–2026, puis ré-import après déploiement.
+
+## Hotfix précédent (2026-08-24)
 
 Les médias de slides répondaient 404 en production : régression du conteneur
 non-root d'IFO-015 — `artisan storage:link` échouait en silence (`|| true`) en
@@ -68,6 +81,7 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-015](tickets/IFO-015-durcissements-differes.md) | Durcissements de l'audit croisé (12/14, deux restes assumés) | terminé |
 | [IFO-016](tickets/IFO-016-favicon-og-appname.md) | Favicon de marque, carte OG, nom d'application en dur | terminé |
 | [IFO-017](tickets/IFO-017-storage-link-non-root.md) | Médias de slides en 404 (storage:link vs non-root) | **en vérification** |
+| [IFO-018](tickets/IFO-018-import-annee-defaut-et-samedi.md) | Import créé un an dans le passé (année par défaut) + feuille SAMEDI ignorée | **en vérification** |
 
 ## Décisions
 
