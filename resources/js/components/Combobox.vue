@@ -22,6 +22,13 @@ type BaseComboboxProps<T> = {
     placeholder?: string;
     name?: string;
     nullable?: boolean;
+    /**
+     * Affiche une croix pour vider la sélection (mode simple uniquement — en mode
+     * multiple, chaque badge a déjà la sienne). Quand la croix est disponible, le
+     * champ caché est toujours émis (vide le cas échéant) pour qu'une mise à jour
+     * puisse réellement effacer la valeur côté serveur.
+     */
+    clearable?: boolean;
 };
 
 type SingleProps<T> = BaseComboboxProps<T> & {
@@ -167,11 +174,11 @@ onUnmounted(() => {
                     :key="getOptionKey(option, index)"
                 />
             </template>
-            <template v-else-if="proxyValue">
+            <template v-else-if="proxyValue || clearable">
                 <input
                     type="hidden"
                     :name="name"
-                    :value="getRawValue(proxyValue)"
+                    :value="proxyValue ? getRawValue(proxyValue) : ''"
                 />
             </template>
         </template>
@@ -227,9 +234,21 @@ onUnmounted(() => {
                     "
                 />
 
+                <button
+                    v-if="clearable && !multiple && proxyValue"
+                    type="button"
+                    aria-label="Effacer la sélection"
+                    @click.stop="proxyValue = null"
+                    class="ml-auto flex cursor-pointer items-center rounded-full p-0.5 outline-none hover:bg-muted-foreground/20"
+                >
+                    <X class="h-3.5 w-3.5 text-muted-foreground/70" />
+                </button>
                 <ComboboxButton
                     ref="buttonRef"
-                    class="ml-auto flex cursor-pointer items-center pr-1"
+                    :class="[
+                        'flex cursor-pointer items-center pr-1',
+                        clearable && !multiple && proxyValue ? '' : 'ml-auto',
+                    ]"
                     @click="updatePosition"
                 >
                     <ChevronsUpDown

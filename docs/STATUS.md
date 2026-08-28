@@ -97,6 +97,7 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-019](tickets/IFO-019-documentation-integree.md) | Documentation intégrée pour les utilisateurs | terminé |
 | [IFO-020](tickets/IFO-020-retours-thibault-ui.md) | Retours UI (avatars locaux, sticky doc, tri, drag & drop slides) | terminé |
 | [IFO-021](tickets/IFO-021-import-annee-defaut-et-samedi.md) | Import créé un an dans le passé (année par défaut) + feuille SAMEDI ignorée | **en vérification** |
+| [IFO-022](tickets/IFO-022-ux-encodage-ressources.md) | UX d'encodage : hiérarchie des boutons, année de cours effaçable | terminé |
 
 ## Décisions
 

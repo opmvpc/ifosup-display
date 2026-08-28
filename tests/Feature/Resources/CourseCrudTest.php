@@ -258,6 +258,21 @@ describe('update', function () {
         $this->assertDatabaseHas('courses', ['id' => $course->id, 'year' => 3]);
     });
 
+    it("efface l'année d'un cours quand le champ est soumis vide", function () {
+        // La croix « effacer » du combobox Année soumet year="" : le middleware
+        // ConvertEmptyStringsToNull doit le transformer en null en base.
+        actingAsUser();
+        $course = Course::factory()->create(['year' => 2]);
+
+        $this->put(route('courses.update', $course), [
+            'name' => $course->name,
+            'code' => $course->code,
+            'year' => '',
+        ]);
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'year' => null]);
+    });
+
     it("resynchronise les groupes d'un cours à la mise à jour", function () {
         actingAsUser();
         $course = Course::factory()->create();

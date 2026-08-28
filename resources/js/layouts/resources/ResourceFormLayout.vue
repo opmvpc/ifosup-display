@@ -119,7 +119,12 @@ watch(
                                 Annuler
                             </Link>
                         </Button>
+                        <!-- À la création, l'action mise en avant (noire) est
+                             « Enregistrer et créer un autre » : l'encodage se
+                             fait en série. En édition, « Enregistrer » est seul
+                             et reste l'action principale. -->
                         <Button
+                            :variant="isEdit ? 'default' : 'outline'"
                             @mousedown="createAnother = false"
                             :disabled="processing"
                             >Enregistrer</Button
@@ -127,10 +132,9 @@ watch(
                         <Button
                             v-if="!isEdit"
                             type="submit"
-                            variant="outline"
                             @mousedown="createAnother = true"
                             :disabled="processing"
-                            >Créer et créer un autre</Button
+                            >Enregistrer et créer un autre</Button
                         >
                     </div>
                 </Form>

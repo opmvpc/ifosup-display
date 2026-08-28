@@ -61,6 +61,7 @@ const yearOptions = [
                     placeholder="Sélectionner une année"
                     name="year"
                     valueKey="id"
+                    clearable
                     :displayFunction="(opt) => opt.name"
                 />
                 <InputError class="mt-2" :message="errors.year" />
