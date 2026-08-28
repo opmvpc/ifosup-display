@@ -4,15 +4,23 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SchedulerSheetParser
 {
+    /**
+     * « samedi » en dernier : un en-tête « SAMEDI MATIN » doit rester attrapé par
+     * « matin ». La feuille SAMEDI du planning réel n'a que « SAMEDI » en en-tête,
+     * et les cours du samedi ont lieu le matin (8h30–13h).
+     */
     private const PERIOD_MAP = [
         'matin' => 'morning',
         'midi' => 'afternoon',
         'soir' => 'evening',
+        'samedi' => 'morning',
     ];
 
     public function parse(string $absolutePath, int $startYear): array
@@ -130,23 +138,72 @@ class SchedulerSheetParser
         return str_replace(['é', 'è', 'ê', 'ë'], 'e', $value);
     }
 
+    /**
+     * L'année du formulaire ne sert que de repli : quand une cellule de la ligne
+     * de dates est une vraie date Excel, son année vient du fichier et prime.
+     * Sans cela, un import du planning 2026-2027 lancé avec « 2025 » sélectionné
+     * créait toutes les attributions un an dans le passé, sans aucune erreur
+     * (constaté en production le 2026-08-28).
+     */
     private function mapDates(Worksheet $sheet, int $row, int $startCol, int $maxCol, int $year): array
     {
-        $map = [];
-        $currentDate = null;
-
+        $columns = [];
         for ($c = $startCol; $c <= $maxCol; $c++) {
-            $val = $sheet->getCell([$c, $row])->getCalculatedValue();
+            $cell = $sheet->getCell([$c, $row]);
+
+            // Les dates du planning réel sont des formules (« =C2+7 ») : les
+            // recalculer est piégeux (le moteur évalue le texte « 24/08 » comme
+            // la division 24/8). On lit la valeur qu'Excel a mise en cache dans
+            // le fichier, et on ne recalcule qu'à défaut de cache.
+            $val = $cell->getDataType() === DataType::TYPE_FORMULA
+                ? ($cell->getOldCalculatedValue() ?? $cell->getCalculatedValue())
+                : $cell->getValue();
             if (empty($val)) {
                 continue;
             }
 
-            if (! $currentDate) {
-                $currentDate = Carbon::createFromFormat('d/m/Y', "{$val}/{$year}")->startOfDay();
-            } else {
-                $currentDate->addWeek();
+            $anchor = null;
+            if (is_numeric($val) && ExcelDate::isDateTime($cell)) {
+                $candidate = Carbon::instance(ExcelDate::excelToDateTimeObject((float) $val))->startOfDay();
+                // Même bornes que la validation d'upload : un numérique au
+                // format date mais hors de toute année scolaire plausible
+                // (formule mal recalculée, reliquat de cellule) n'ancre rien.
+                if ($candidate->year >= 2000 && $candidate->year <= 2100) {
+                    $anchor = $candidate;
+                }
             }
-            $map[$c] = $currentDate->toDateString();
+
+            $columns[] = ['col' => $c, 'anchor' => $anchor, 'raw' => $val];
+        }
+
+        $dates = [];
+        $anchored = [];
+        foreach ($columns as $i => $column) {
+            if ($column['anchor']) {
+                $dates[$i] = $column['anchor'];
+                $anchored[$i] = true;
+            } elseif ($i > 0) {
+                $dates[$i] = $dates[$i - 1]->copy()->addWeek();
+                $anchored[$i] = $anchored[$i - 1];
+            } else {
+                $dates[$i] = Carbon::createFromFormat('d/m/Y', "{$column['raw']}/{$year}")->startOfDay();
+                $anchored[$i] = false;
+            }
+        }
+
+        // Le planning réel commence par une cellule texte (« 24/08 ») suivie de
+        // vraies dates : les colonnes texte qui précèdent une date ancrée sont
+        // recalées dessus, à une semaine d'écart par colonne.
+        for ($i = count($columns) - 2; $i >= 0; $i--) {
+            if (! $anchored[$i] && $anchored[$i + 1]) {
+                $dates[$i] = $dates[$i + 1]->copy()->subWeek();
+                $anchored[$i] = true;
+            }
+        }
+
+        $map = [];
+        foreach ($columns as $i => $column) {
+            $map[$column['col']] = $dates[$i]->toDateString();
         }
 
         return $map;
