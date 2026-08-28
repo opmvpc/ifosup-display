@@ -240,7 +240,7 @@ it('inclut course.teacher, course.groups et room dans les lignes de planning', f
 
     $teacher = Teacher::factory()->create(['name' => 'Jean Dupont']);
     $room = Room::factory()->create(['name' => 'Salle 101']);
-    $course = Course::factory()->create(['teacher_id' => $teacher->id]);
+    $course = Course::factory()->create(['teacher_id' => $teacher->id, 'year' => 2]);
     $groups = Group::factory()->count(2)->create();
     $course->groups()->attach($groups->pluck('id'));
 
@@ -262,6 +262,7 @@ it('inclut course.teacher, course.groups et room dans les lignes de planning', f
     $row = collect($morningRows['data']['rows'])->first();
 
     expect($row['course']['teacher']['name'])->toBe('Jean Dupont')
+        ->and($row['course']['year'])->toBe(2)
         ->and($row['course']['groups'])->toHaveCount(2)
         ->and($row['room']['name'])->toBe('Salle 101');
 });

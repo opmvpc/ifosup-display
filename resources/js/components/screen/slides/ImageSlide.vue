@@ -1,6 +1,10 @@
 <template>
-    <div class="h-full w-full">
-        <img :src="data?.src" class="h-full w-full object-cover" alt="Slide" />
+    <div class="h-full w-full bg-[#1e2d55]">
+        <img
+            :src="data?.src"
+            class="h-full w-full object-contain"
+            alt="Slide"
+        />
     </div>
 </template>
 

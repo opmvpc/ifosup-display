@@ -5,6 +5,7 @@ import actions from '@/actions/App/Http/Controllers/GroupController';
 import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceShowLayout from '@/layouts/resources/ResourceShowLayout.vue';
+import { courseAvatar, groupAvatar } from '@/lib/avatars';
 
 const props = defineProps<{
     group: Group;
@@ -12,14 +13,6 @@ const props = defineProps<{
 
 const routes = useResourceRoutes(props.group.id, actions);
 const courses = props.group.courses ?? [];
-
-const getGroupAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(name)}`;
-};
-
-const getCourseAvatarUrl = (seed: string) => {
-    return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`;
-};
 </script>
 
 <template>
@@ -35,7 +28,7 @@ const getCourseAvatarUrl = (seed: string) => {
             >
                 <div class="flex items-start gap-6 p-6">
                     <img
-                        :src="getGroupAvatarUrl(group.name)"
+                        :src="groupAvatar(group.name)"
                         :alt="group.name"
                         class="h-20 w-20 shrink-0 rounded-2xl border border-sidebar-border/80 bg-white/70 p-1 dark:bg-zinc-800/70"
                     />
@@ -68,7 +61,7 @@ const getCourseAvatarUrl = (seed: string) => {
                         :key="course.id"
                         :href="courseActions.show(course.id).url"
                         :title="course.name"
-                        :image="getCourseAvatarUrl(course.code)"
+                        :image="courseAvatar(course.code)"
                     >
                     </ResourceListItem>
                 </div>

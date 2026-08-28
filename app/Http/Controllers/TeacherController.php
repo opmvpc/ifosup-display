@@ -16,7 +16,7 @@ class TeacherController extends Controller
      */
     public function index(): Response
     {
-        $teachers = Teacher::all();
+        $teachers = Teacher::orderBy('name')->get();
 
         return Inertia::render('resources/teachers/Index', [
             'teachers' => $teachers,

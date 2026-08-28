@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ScheduleController;
@@ -46,6 +47,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('screen/slides/order', [ScreenSlideController::class, 'reorder'])->name('screen.slides.reorder');
     Route::patch('screen/slides/{screenSlide}', [ScreenSlideController::class, 'update'])->name('screen.slides.update');
     Route::delete('screen/slides/{screenSlide}', [ScreenSlideController::class, 'destroy'])->name('screen.slides.destroy');
+
+    Route::get('docs/{page?}', [DocsController::class, 'show'])->name('docs');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', AdminUserController::class);

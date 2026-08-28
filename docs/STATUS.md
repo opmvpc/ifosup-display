@@ -10,10 +10,22 @@ le passé** (24/08/2025 → 24/06/2026) : en août, le sélecteur d'année scola
 proposait l'année précédente par défaut (`getMonth() >= 8`, off-by-one sur les
 mois indexés à 0), et le parser ignorait les années pourtant présentes dans les
 cellules de date du fichier. Corrigé sur la branche
-`fix/ifo-018-import-annee-samedi` (défaut d'année, dates du fichier prioritaires,
-alerte « période déjà passée », feuille SAMEDI importée comme matin) :
-[IFO-018](tickets/IFO-018-import-annee-defaut-et-samedi.md). Côté prod : Thibault
-purge les attributions fantômes 2025–2026, puis ré-import après déploiement.
+`fix/ifo-018-import-annee-samedi` (défaut d'année, dates du fichier prioritaires
+en lisant le cache des formules, alerte « période déjà passée », feuille SAMEDI
+importée comme matin) :
+[IFO-021](tickets/IFO-021-import-annee-defaut-et-samedi.md). Côté prod : les
+attributions fantômes 2025–2026 ont été purgées par Thibault (353 supprimées) ;
+ré-import à faire après déploiement.
+
+## Livré le 2026-08-25 (PR #5, mergée)
+
+Retours de la directrice ([IFO-018](tickets/IFO-018-retours-directrice.md)) :
+tris alphabétiques/naturels partout, année d'étude sur les cours (affichée
+jusqu'au planning TV), ratio des médias de slides conservé, `CourseCatalogSeeder`
+manuel. **Documentation intégrée** terminée
+([IFO-019](tickets/IFO-019-documentation-integree.md)) et retours UI
+([IFO-020](tickets/IFO-020-retours-thibault-ui.md)).
+Reste : lancer `php artisan db:seed --class=CourseCatalogSeeder` en prod.
 
 ## Hotfix précédent (2026-08-24)
 
@@ -81,7 +93,10 @@ passe, menu utilisateur) sont traduites en français
 | [IFO-015](tickets/IFO-015-durcissements-differes.md) | Durcissements de l'audit croisé (12/14, deux restes assumés) | terminé |
 | [IFO-016](tickets/IFO-016-favicon-og-appname.md) | Favicon de marque, carte OG, nom d'application en dur | terminé |
 | [IFO-017](tickets/IFO-017-storage-link-non-root.md) | Médias de slides en 404 (storage:link vs non-root) | **en vérification** |
-| [IFO-018](tickets/IFO-018-import-annee-defaut-et-samedi.md) | Import créé un an dans le passé (année par défaut) + feuille SAMEDI ignorée | **en vérification** |
+| [IFO-018](tickets/IFO-018-retours-directrice.md) | Retours directrice (tris, année de cours, ratio médias, seeder) | terminé |
+| [IFO-019](tickets/IFO-019-documentation-integree.md) | Documentation intégrée pour les utilisateurs | terminé |
+| [IFO-020](tickets/IFO-020-retours-thibault-ui.md) | Retours UI (avatars locaux, sticky doc, tri, drag & drop slides) | terminé |
+| [IFO-021](tickets/IFO-021-import-annee-defaut-et-samedi.md) | Import créé un an dans le passé (année par défaut) + feuille SAMEDI ignorée | **en vérification** |
 
 ## Décisions
 

@@ -5,6 +5,7 @@ import actions from '@/actions/App/Http/Controllers/TeacherController';
 import ResourceListItem from '@/components/resources/ResourceListItem.vue';
 import { useResourceRoutes } from '@/composables/useResourceRoutes';
 import ResourceShowLayout from '@/layouts/resources/ResourceShowLayout.vue';
+import { courseAvatar, teacherAvatar } from '@/lib/avatars';
 
 const props = defineProps<{
     teacher: Teacher;
@@ -12,14 +13,6 @@ const props = defineProps<{
 
 const routes = useResourceRoutes(props.teacher.id, actions);
 const courses = props.teacher.courses ?? [];
-
-const getTeacherAvatarUrl = (name: string) => {
-    return `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(name)}`;
-};
-
-const getCourseAvatarUrl = (seed: string) => {
-    return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`;
-};
 </script>
 
 <template>
@@ -35,7 +28,7 @@ const getCourseAvatarUrl = (seed: string) => {
             >
                 <div class="flex items-start gap-6 p-6">
                     <img
-                        :src="getTeacherAvatarUrl(teacher.name)"
+                        :src="teacherAvatar(teacher.name)"
                         :alt="teacher.name"
                         class="h-20 w-20 shrink-0 rounded-2xl border border-sidebar-border/80 bg-white/70 p-1 dark:bg-zinc-800/70"
                     />
@@ -70,7 +63,7 @@ const getCourseAvatarUrl = (seed: string) => {
                         :key="course.id"
                         :href="courseActions.show(course.id).url"
                         :title="course.name"
-                        :image="getCourseAvatarUrl(course.code)"
+                        :image="courseAvatar(course.code)"
                     >
                     </ResourceListItem>
                 </div>

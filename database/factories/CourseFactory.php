@@ -63,6 +63,7 @@ class CourseFactory extends Factory
         return [
             'code' => $code,
             'name' => $name,
+            'year' => fake()->optional(0.7)->numberBetween(1, 3),
             'teacher_id' => Teacher::factory(),
         ];
     }

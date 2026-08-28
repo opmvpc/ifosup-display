@@ -32,6 +32,7 @@ import type { ZoomLevel } from '@/composables/useSchedulerView';
 import { useSyncScroll } from '@/composables/useSyncScroll';
 import type { DerivedTheme } from '@/composables/useThemeDerivation';
 import { useThemeDerivation } from '@/composables/useThemeDerivation';
+import { compareRoomNames } from '@/lib/rooms';
 import { schedule } from '@/routes';
 import Combobox from './Combobox.vue';
 import PlaceholderPattern from './PlaceholderPattern.vue';
@@ -188,21 +189,8 @@ const courses = computed(() => {
     );
 });
 
-const compareRooms = (a: string, b: string): number => {
-    const isInt = (s: string) => /^-?\d+$/.test(s);
-    const na = parseInt(a, 10),
-        nb = parseInt(b, 10);
-    const group = (s: string, n: number) => (!isInt(s) ? 2 : n < 0 ? 0 : 1);
-    const ga = group(a, na),
-        gb = group(b, nb);
-    if (ga !== gb) return ga - gb;
-    if (ga === 0) return Math.abs(na) - Math.abs(nb);
-    if (ga === 1) return na - nb;
-    return a.localeCompare(b);
-};
-
 const sortedRooms = computed(() =>
-    [...props.rooms].sort((a, b) => compareRooms(a.name, b.name)),
+    [...props.rooms].sort((a, b) => compareRoomNames(a.name, b.name)),
 );
 
 const courseSearchQuery = ref('');

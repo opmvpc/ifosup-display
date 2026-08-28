@@ -1,5 +1,5 @@
 ---
-id: IFO-018
+id: IFO-021
 titre: Import Excel — année par défaut fausse en août (cours créés en 2025) et feuille SAMEDI ignorée
 statut: terminé
 priorité: haute

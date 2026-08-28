@@ -25,6 +25,19 @@ describe('index', function () {
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('resources/teachers/Index'));
     });
+
+    it('trie les enseignants par ordre alphabétique', function () {
+        actingAsUser();
+        Teacher::factory()->create(['name' => 'Zoé Wallon']);
+        Teacher::factory()->create(['name' => 'Alice Martin']);
+        Teacher::factory()->create(['name' => 'Marc Petit']);
+
+        $response = $this->get(route('teachers.index'))->assertOk();
+
+        $names = collect($response->viewData('page')['props']['teachers'])->pluck('name')->all();
+
+        expect($names)->toBe(['Alice Martin', 'Marc Petit', 'Zoé Wallon']);
+    });
 });
 
 describe('create', function () {
