@@ -45,9 +45,10 @@ dans `applyPayload(cachedPayload)` → `hydrateSlides` → `resolveCachedMediaSo
 mais ses promesses ne se résolvent jamais. Le refresh déclenché par `next`
 bloque au même endroit après son fetch ; le Welcome n'émet qu'une fois : figé.
 
-Correctif : chaque appel à l'API Cache (`open`, `match`, `blob`, `put`) est
-borné à 3 s (`withTimeout`) ; au premier dépassement, le cache média est
-désactivé pour la session et les slides utilisent leurs URL directes.
+Correctif, en deux temps : d'abord des timeouts de 3 s autour de l'API Cache
+(commit `5fd613e`), puis, `/screen` n'étant affiché que sur cette TV, décision
+de Thibault de **retirer complètement le cache média** (URL directes, cache
+HTTP du navigateur). Le payload reste mémorisé en localStorage.
 
 ## Critères d'acceptation
 
@@ -61,7 +62,7 @@ désactivé pour la session et les slides utilisent leurs URL directes.
 - [x] Lint + types au vert sur le mode debug.
 - [x] Cause identifiée sur la TV à partir du journal : API Cache qui ne
       répond jamais.
-- [ ] Correctif (timeouts + désactivation du cache média) vérifié sur la TV :
+- [ ] Correctif (cache média retiré) vérifié sur la TV :
       le diaporama enchaîne Bienvenue → Planning → images.
 
 ## Journal du ticket

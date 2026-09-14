@@ -119,15 +119,10 @@ const FALLBACK_WELCOME_SLIDE: KioskSlide = {
 };
 
 const SCREEN_CACHE_KEY = 'screen:kiosk-payload:v1';
-const MEDIA_CACHE_NAME = 'screen:kiosk-media:v1';
 
-// Sur le navigateur des TV Samsung (Tizen), `window.caches` existe mais ses
-// promesses (`open`, `match`, …) ne se résolvent jamais : le kiosque restait
-// suspendu à l'hydratation des slides (IFO-023). Chaque appel est donc borné
-// dans le temps, et le cache média est abandonné pour la session au premier
-// dépassement, avec repli sur les URL directes.
-const MEDIA_CACHE_TIMEOUT_MS = 3000;
-let mediaCacheDisabled = false;
+// Pas de cache média (API Cache) : sur le navigateur des TV Samsung, ses
+// promesses ne se résolvent jamais et figeaient le kiosque (IFO-023). Les
+// slides utilisent leurs URL directes ; le navigateur gère le cache HTTP.
 
 const components = {
     welcome: defineAsyncComponent(() => import('./slides/Welcome.vue')),
@@ -152,7 +147,6 @@ function onFullscreenChange() {
 const slides = ref<KioskSlide[]>([FALLBACK_WELCOME_SLIDE]);
 const isRefreshing = ref(false);
 let pendingRefresh: Promise<void> | null = null;
-const mediaObjectUrls = new Map<string, string>();
 
 const currentIndex = ref(0);
 const currentSlide = computed<KioskSlide | undefined>(
@@ -196,10 +190,6 @@ function withWelcomeState(
     });
 }
 
-function normalizeMediaCacheKey(src: string): string {
-    return new URL(src, window.location.origin).toString();
-}
-
 function readCachedPayload(): ScreenPayload | null {
     try {
         const raw = window.localStorage.getItem(SCREEN_CACHE_KEY);
@@ -223,159 +213,6 @@ function writeCachedPayload(payload: ScreenPayload): void {
     }
 }
 
-function isCacheableMediaSource(src: string): boolean {
-    return /^(https?:\/\/|\/)/.test(src);
-}
-
-function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-        const timer = window.setTimeout(() => {
-            reject(new Error(`${label} n'a pas répondu en ${MEDIA_CACHE_TIMEOUT_MS} ms`));
-        }, MEDIA_CACHE_TIMEOUT_MS);
-
-        promise.then(
-            (value) => {
-                window.clearTimeout(timer);
-                resolve(value);
-            },
-            (error) => {
-                window.clearTimeout(timer);
-                reject(error);
-            },
-        );
-    });
-}
-
-function isMediaCacheAvailable(): boolean {
-    return !mediaCacheDisabled && 'caches' in window;
-}
-
-function disableMediaCache(error: unknown): void {
-    mediaCacheDisabled = true;
-    debugLog('cache média désactivé pour la session', error);
-    console.error('Media cache unavailable, falling back to direct URLs.', error);
-}
-
-async function resolveCachedMediaSource(src: string): Promise<string> {
-    if (!isCacheableMediaSource(src) || !isMediaCacheAvailable()) {
-        return src;
-    }
-
-    const cacheKey = normalizeMediaCacheKey(src);
-
-    if (mediaObjectUrls.has(cacheKey)) {
-        return mediaObjectUrls.get(cacheKey) ?? src;
-    }
-
-    try {
-        const cache = await withTimeout(
-            window.caches.open(MEDIA_CACHE_NAME),
-            'caches.open',
-        );
-        const cachedResponse = await withTimeout(
-            cache.match(cacheKey),
-            'cache.match',
-        );
-
-        if (!cachedResponse) {
-            return src;
-        }
-
-        const mediaBlob = await withTimeout(
-            cachedResponse.blob(),
-            'response.blob',
-        );
-        mediaObjectUrls.set(cacheKey, URL.createObjectURL(mediaBlob));
-
-        return mediaObjectUrls.get(cacheKey) ?? src;
-    } catch (error) {
-        disableMediaCache(error);
-        return src;
-    }
-}
-
-async function warmMediaCache(payloadSlides: KioskSlide[]): Promise<void> {
-    if (!isMediaCacheAvailable()) {
-        return;
-    }
-
-    const mediaSlides = payloadSlides.filter((slide) => {
-        if (!['image', 'video'].includes(slide.type)) {
-            return false;
-        }
-
-        const data = slide.data as MediaSlideData;
-
-        return typeof data.src === 'string' && data.src.length > 0;
-    });
-
-    if (mediaSlides.length === 0) {
-        return;
-    }
-
-    try {
-        const cache = await withTimeout(
-            window.caches.open(MEDIA_CACHE_NAME),
-            'caches.open',
-        );
-
-        await Promise.all(
-            mediaSlides.map(async (slide) => {
-                const data = slide.data as MediaSlideData;
-                const cacheKey = normalizeMediaCacheKey(data.src);
-
-                if (await withTimeout(cache.match(cacheKey), 'cache.match')) {
-                    return;
-                }
-
-                try {
-                    const response = await fetch(cacheKey);
-
-                    if (!response.ok) {
-                        return;
-                    }
-
-                    await withTimeout(
-                        cache.put(cacheKey, response.clone()),
-                        'cache.put',
-                    );
-                } catch (error) {
-                    console.error('Unable to cache media slide.', error);
-                }
-            }),
-        );
-    } catch (error) {
-        disableMediaCache(error);
-    }
-}
-
-async function hydrateSlides(
-    baseSlides: KioskSlide[],
-    isReady: boolean,
-): Promise<KioskSlide[]> {
-    const hydratedSlides: KioskSlide[] = [];
-
-    for (const slide of withWelcomeState(baseSlides, isReady)) {
-        if (slide.type === 'image' || slide.type === 'video') {
-            const data = slide.data as MediaSlideData;
-
-            hydratedSlides.push({
-                ...slide,
-                data: {
-                    ...data,
-                    src: await resolveCachedMediaSource(data.src),
-                },
-            });
-
-            continue;
-        }
-
-        hydratedSlides.push(slide);
-    }
-
-    return hydratedSlides;
-}
-
 async function applyPayload(
     payload: ScreenPayload,
     isReady = true,
@@ -383,7 +220,7 @@ async function applyPayload(
     const baseSlides =
         payload.slides.length > 0 ? payload.slides : [FALLBACK_WELCOME_SLIDE];
 
-    slides.value = await hydrateSlides(baseSlides, isReady);
+    slides.value = withWelcomeState(baseSlides, isReady);
 
     if (currentIndex.value >= slides.value.length) {
         currentIndex.value = 0;
@@ -417,7 +254,6 @@ async function refreshAssignments(): Promise<void> {
                 'refresh: ok',
                 slides.value.map((slide) => slide.type).join(','),
             );
-            void warmMediaCache(payload.slides);
         } catch (error) {
             console.error('Unable to refresh screen data.', error);
             slides.value = withWelcomeState(slides.value, true);
@@ -440,9 +276,8 @@ onMounted(async () => {
     const cachedPayload = readCachedPayload();
 
     if (cachedPayload) {
-        debugLog('cache payload: hydratation');
+        debugLog('payload en localStorage appliqué');
         await applyPayload(cachedPayload, true);
-        debugLog('cache payload: ok');
     }
 
     await refreshAssignments();
@@ -450,12 +285,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
     document.removeEventListener('fullscreenchange', onFullscreenChange);
-
-    for (const objectUrl of mediaObjectUrls.values()) {
-        URL.revokeObjectURL(objectUrl);
-    }
-
-    mediaObjectUrls.clear();
 });
 
 watch(currentIndex, async (newIndex, previousIndex) => {

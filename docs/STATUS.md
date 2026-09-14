@@ -10,7 +10,7 @@ Browser ; Chrome/Firefox/Edge passent. Le mode `/screen?debug=1` (journal à
 l'écran + eruda, PR #8) a montré la cause sur la TV : `window.caches.open()` /
 `cache.match()` ne se résolvent jamais sur le navigateur Samsung, le kiosque
 restait suspendu à l'hydratation des slides. Correctif poussé sur `main`
-(timeouts de 3 s + désactivation du cache média pour la session) :
+(cache média retiré du kiosque, URL directes) :
 [IFO-023](tickets/IFO-023-diaporama-fige-tv-tizen.md). **Prochaine action** :
 vérifier l'enchaînement des slides sur la TV après déploiement, puis clore.
 
