@@ -1,7 +1,7 @@
 ---
 id: IFO-023
 titre: Diaporama figé au premier changement de slide sur la TV Samsung (Tizen)
-statut: en-cours
+statut: terminé
 priorité: haute
 dépend-de: []
 créé: 2026-09-14
@@ -62,7 +62,7 @@ HTTP du navigateur). Le payload reste mémorisé en localStorage.
 - [x] Lint + types au vert sur le mode debug.
 - [x] Cause identifiée sur la TV à partir du journal : API Cache qui ne
       répond jamais.
-- [ ] Correctif (cache média retiré) vérifié sur la TV :
+- [x] Correctif (cache média retiré) vérifié sur la TV par Thibault :
       le diaporama enchaîne Bienvenue → Planning → images.
 
 ## Journal du ticket
@@ -74,3 +74,6 @@ HTTP du navigateur). Le payload reste mémorisé en localStorage.
   sur la TV → cause trouvée (API Cache suspendue) ; correctif poussé
   directement sur `main` (nouvelle règle de travail : push direct pour les
   correctifs).
+- 2026-09-14 — 18h : Thibault confirme sur la TV que le diaporama enchaîne.
+  Passe de propreté (ESLint, Prettier, vue-tsc), branche distante supprimée,
+  clôture. Pour sortir du mode debug sur la TV : `/screen?debug=0`.

@@ -2,17 +2,16 @@
 
 _Dernière mise à jour : 2026-09-14_
 
-## En cours (2026-09-14) — diaporama figé sur la TV
+## Livré le 2026-09-14 — diaporama figé sur la TV (clos)
 
-`/screen` se fige au passage Bienvenue → Planning sur la TV Samsung de l'école
-(navigateur Tizen, Chromium récent) et chez une étudiante sous Avast Secure
-Browser ; Chrome/Firefox/Edge passent. Le mode `/screen?debug=1` (journal à
-l'écran + eruda, PR #8) a montré la cause sur la TV : `window.caches.open()` /
-`cache.match()` ne se résolvent jamais sur le navigateur Samsung, le kiosque
-restait suspendu à l'hydratation des slides. Correctif poussé sur `main`
-(cache média retiré du kiosque, URL directes) :
-[IFO-023](tickets/IFO-023-diaporama-fige-tv-tizen.md). **Prochaine action** :
-vérifier l'enchaînement des slides sur la TV après déploiement, puis clore.
+`/screen` se figeait au passage Bienvenue → Planning sur la TV Samsung de
+l'école (Tizen 9, Chromium 120). Le mode `/screen?debug=1` (journal à l'écran
++ eruda, PR #8) a montré la cause : `window.caches.open()` / `cache.match()`
+ne se résolvent jamais sur le navigateur Samsung, le kiosque restait suspendu
+à l'hydratation des slides. Cache média retiré du kiosque (URL directes),
+validé sur la TV par Thibault : [IFO-023](tickets/IFO-023-diaporama-fige-tv-tizen.md).
+Le mode debug reste disponible (`?debug=0` pour en sortir). **Règle de travail
+depuis ce jour** : les correctifs sont poussés directement sur `main`.
 
 ## Correctif livré (2026-08-28)
 
