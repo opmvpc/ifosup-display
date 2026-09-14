@@ -34,6 +34,21 @@ Pistes ouvertes (à départager par le mode debug) :
   debug le distingue d'un simple événement manquant ;
 - cache média (`window.caches`, URL `blob:`) restreint par le navigateur.
 
+## Diagnostic (2026-09-14, 17h19, sur la TV)
+
+Journal du mode debug (UA : `SMART-TV; Linux; Tizen 9.0 … SamsungBrowser/8.0
+Chrome/120.0.6099.5`) : battement de cœur qui continue (thread principal
+vivant), `next demandé` → `refresh: fetch /screen/data`, puis plus rien. Et
+surtout **aucun `refresh: fetch` au montage** : `onMounted` reste suspendu avant,
+dans `applyPayload(cachedPayload)` → `hydrateSlides` → `resolveCachedMediaSource`
+→ `window.caches.open()` / `cache.match()`. Sur ce navigateur, `caches` existe
+mais ses promesses ne se résolvent jamais. Le refresh déclenché par `next`
+bloque au même endroit après son fetch ; le Welcome n'émet qu'une fois : figé.
+
+Correctif : chaque appel à l'API Cache (`open`, `match`, `blob`, `put`) est
+borné à 3 s (`withTimeout`) ; au premier dépassement, le cache média est
+désactivé pour la session et les slides utilisent leurs URL directes.
+
 ## Critères d'acceptation
 
 - [x] `/screen?debug=1` affiche un journal à l'écran (changements de slide,
@@ -41,15 +56,20 @@ Pistes ouvertes (à départager par le mode debug) :
       `console.error`/`warn`, battement de cœur) et charge eruda (console
       DevTools dans la page). `?debug=0` désactive. Rien n'est chargé hors mode
       debug.
-- [ ] Vérifié dans le navigateur (stack dev) : journal visible, eruda ouvrable,
-      aucune régression du diaporama sans `?debug`.
-- [ ] Lint + types au vert.
-- [ ] Cause identifiée sur la TV à partir du journal (session sur place).
-- [ ] Correctif livré et vérifié sur la TV.
+- [x] Vérifié sur la TV par Thibault : journal visible, eruda chargé (la
+      vérification en stack dev a été sautée, trop lente : « act fast »).
+- [x] Lint + types au vert sur le mode debug.
+- [x] Cause identifiée sur la TV à partir du journal : API Cache qui ne
+      répond jamais.
+- [ ] Correctif (timeouts + désactivation du cache média) vérifié sur la TV :
+      le diaporama enchaîne Bienvenue → Planning → images.
 
 ## Journal du ticket
 
 - 2026-09-14 — création après diagnostic (modèle de TV, moteur, navigateur de
   l'étudiante identifié : Avast Secure Browser). Module
   `resources/js/lib/kioskDebug.ts` + instrumentation de `Kiosk.vue`, branche
-  `fix/ifo-023-debug-kiosk-tv`.
+  `fix/ifo-023-debug-kiosk-tv`. Mergé (PR #8) et déployé ; photos du journal
+  sur la TV → cause trouvée (API Cache suspendue) ; correctif poussé
+  directement sur `main` (nouvelle règle de travail : push direct pour les
+  correctifs).

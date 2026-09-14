@@ -6,11 +6,13 @@ _Dernière mise à jour : 2026-09-14_
 
 `/screen` se fige au passage Bienvenue → Planning sur la TV Samsung de l'école
 (navigateur Tizen, Chromium récent) et chez une étudiante sous Avast Secure
-Browser ; Chrome/Firefox/Edge passent. Pas de DevTools sur la TV : la branche
-`fix/ifo-023-debug-kiosk-tv` ajoute un mode `/screen?debug=1` (journal à
-l'écran + eruda) pour lire l'erreur sur place :
+Browser ; Chrome/Firefox/Edge passent. Le mode `/screen?debug=1` (journal à
+l'écran + eruda, PR #8) a montré la cause sur la TV : `window.caches.open()` /
+`cache.match()` ne se résolvent jamais sur le navigateur Samsung, le kiosque
+restait suspendu à l'hydratation des slides. Correctif poussé sur `main`
+(timeouts de 3 s + désactivation du cache média pour la session) :
 [IFO-023](tickets/IFO-023-diaporama-fige-tv-tizen.md). **Prochaine action** :
-déployer, relever le journal sur la TV, corriger.
+vérifier l'enchaînement des slides sur la TV après déploiement, puis clore.
 
 ## Correctif livré (2026-08-28)
 
