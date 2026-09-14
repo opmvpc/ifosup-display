@@ -48,11 +48,8 @@ import {
     ref,
     watch,
 } from 'vue';
-import {
-    isKioskDebugEnabled,
-    setupKioskDebug,
-    type KioskLogger,
-} from '@/lib/kioskDebug';
+import type { KioskLogger } from '@/lib/kioskDebug';
+import { isKioskDebugEnabled, setupKioskDebug } from '@/lib/kioskDebug';
 
 type SlideType = 'welcome' | 'schedule' | 'image' | 'video';
 
