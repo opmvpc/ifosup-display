@@ -117,11 +117,9 @@ export function setupKioskDebug(): KioskLogger {
     };
 
     window.addEventListener('error', (event) => {
-        push(
-            '✖ error',
-            event.message,
-            [event.error ?? `${event.filename}:${event.lineno}:${event.colno}`],
-        );
+        push('✖ error', event.message, [
+            event.error ?? `${event.filename}:${event.lineno}:${event.colno}`,
+        ]);
     });
 
     window.addEventListener('unhandledrejection', (event) => {
