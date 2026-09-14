@@ -1,6 +1,11 @@
 <template>
     <div class="relative h-screen w-screen overflow-hidden bg-black">
-        <transition name="slide">
+        <transition
+            name="slide"
+            @before-enter="debugLog('transition: before-enter')"
+            @after-enter="debugLog('transition: after-enter')"
+            @after-leave="debugLog('transition: after-leave')"
+        >
             <component
                 v-if="currentSlide"
                 :is="components[currentSlide.type]"
@@ -43,6 +48,8 @@ import {
     ref,
     watch,
 } from 'vue';
+import type { KioskLogger } from '@/lib/kioskDebug';
+import { isKioskDebugEnabled, setupKioskDebug } from '@/lib/kioskDebug';
 
 type SlideType = 'welcome' | 'schedule' | 'image' | 'video';
 
@@ -122,6 +129,9 @@ const components = {
 };
 
 const isFullscreen = ref(false);
+
+// Journal à l'écran en mode debug (`?debug=1`), muet sinon.
+let debugLog: KioskLogger = () => {};
 
 function enterFullscreen() {
     document.documentElement.requestFullscreen().catch(console.error);
@@ -336,6 +346,7 @@ async function refreshAssignments(): Promise<void> {
 
     pendingRefresh = (async () => {
         try {
+            debugLog('refresh: fetch /screen/data');
             const response = await fetch('/screen/data');
 
             if (!response.ok) {
@@ -348,6 +359,10 @@ async function refreshAssignments(): Promise<void> {
 
             writeCachedPayload(payload);
             await applyPayload(payload, true);
+            debugLog(
+                'refresh: ok',
+                slides.value.map((slide) => slide.type).join(','),
+            );
             void warmMediaCache(payload.slides);
         } catch (error) {
             console.error('Unable to refresh screen data.', error);
@@ -362,6 +377,10 @@ async function refreshAssignments(): Promise<void> {
 }
 
 onMounted(async () => {
+    if (isKioskDebugEnabled()) {
+        debugLog = setupKioskDebug();
+    }
+
     document.addEventListener('fullscreenchange', onFullscreenChange);
 
     const cachedPayload = readCachedPayload();
@@ -384,6 +403,12 @@ onUnmounted(() => {
 });
 
 watch(currentIndex, async (newIndex, previousIndex) => {
+    debugLog(
+        `slide ${newIndex + 1}/${slides.value.length}`,
+        currentSlide.value?.type ?? '?',
+        currentSlide.value?.key ?? '?',
+    );
+
     if (newIndex !== 0 || previousIndex === undefined || previousIndex === 0) {
         return;
     }
@@ -392,6 +417,8 @@ watch(currentIndex, async (newIndex, previousIndex) => {
 });
 
 async function goToNextSlide() {
+    debugLog('next demandé');
+
     if (currentIndex.value === 0 && slides.value.length <= 1) {
         await refreshAssignments();
 

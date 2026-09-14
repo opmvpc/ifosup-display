@@ -1,8 +1,18 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-08-28_
+_Dernière mise à jour : 2026-09-14_
 
-## Correctif en cours (2026-08-28)
+## En cours (2026-09-14) — diaporama figé sur la TV
+
+`/screen` se fige au passage Bienvenue → Planning sur la TV Samsung de l'école
+(navigateur Tizen, Chromium récent) et chez une étudiante sous Avast Secure
+Browser ; Chrome/Firefox/Edge passent. Pas de DevTools sur la TV : la branche
+`fix/ifo-023-debug-kiosk-tv` ajoute un mode `/screen?debug=1` (journal à
+l'écran + eruda) pour lire l'erreur sur place :
+[IFO-023](tickets/IFO-023-diaporama-fige-tv-tizen.md). **Prochaine action** :
+déployer, relever le journal sur la TV, corriger.
+
+## Correctif livré (2026-08-28)
 
 Premier import réel en production : succès annoncé, planning vide. Les 353
 attributions du fichier « LOCAUX XAVIER 26-27.xlsx » ont été créées **un an dans
