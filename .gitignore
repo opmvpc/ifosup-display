@@ -28,3 +28,6 @@ yarn-error.log
 /.zed
 .env.docker
 /.pnpm-store
+
+# Jeux de donnees de travail (fichiers Excel reels)
+docs/data/

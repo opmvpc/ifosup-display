@@ -1,6 +1,17 @@
 # STATUS — IFOSUP Display
 
-_Dernière mise à jour : 2026-09-14_
+_Dernière mise à jour : 2026-09-15_
+
+## Livré le 2026-09-15 — import du planning annuel coupé à 30 s
+
+L'import du fichier V3 (quelques milliers d'attributions) dépassait la limite
+PHP de 30 s : une requête SQL par ligne à l'aperçu et à l'import, parsing
+exécuté deux fois. Limite relevée à 300 s (`docker/php.ini` +
+`set_time_limit`) pour débloquer la rentrée :
+[IFO-024](tickets/IFO-024-import-planning-trop-long.md),
+[ADR-004](decisions/ADR-004-import-planning-temps-execution.md). **Prochaine
+action** : Thibault réessaie l'import après déploiement. **Plus tard** : import
+en tâche de fond (ADR-004).
 
 ## Livré le 2026-09-14 — diaporama figé sur la TV (clos)
 
@@ -10,8 +21,9 @@ l'école (Tizen 9, Chromium 120). Le mode `/screen?debug=1` (journal à l'écran
 ne se résolvent jamais sur le navigateur Samsung, le kiosque restait suspendu
 à l'hydratation des slides. Cache média retiré du kiosque (URL directes),
 validé sur la TV par Thibault : [IFO-023](tickets/IFO-023-diaporama-fige-tv-tizen.md).
-Le mode debug reste disponible (`?debug=0` pour en sortir). **Règle de travail
-depuis ce jour** : les correctifs sont poussés directement sur `main`.
+Décision consignée dans [ADR-003](decisions/ADR-003-kiosque-sans-cache-media.md).
+**Règle de travail depuis ce jour** : les correctifs sont poussés directement
+sur `main`.
 
 ## Correctif livré (2026-08-28)
 

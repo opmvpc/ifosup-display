@@ -146,6 +146,11 @@ class SchedulerImportController extends Controller
             return response()->json(['error' => 'Aucun fichier en attente.'], 422);
         }
 
+        // Parsing du classeur + une requête SQL par ligne : plusieurs dizaines de
+        // secondes sur un planning annuel complet. Limite relevée en attendant
+        // l'import en tâche de fond (IFO-024, ADR-004).
+        set_time_limit(300);
+
         $startYear = $request->session()->get($this->sessionYearKey(), (int) now()->year);
         $absolutePath = Storage::path($path);
 
@@ -294,6 +299,11 @@ class SchedulerImportController extends Controller
         if (! $path) {
             return response()->json(['error' => 'Aucun fichier en attente.'], 422);
         }
+
+        // Parsing du classeur + une requête SQL par ligne : plusieurs dizaines de
+        // secondes sur un planning annuel complet. Limite relevée en attendant
+        // l'import en tâche de fond (IFO-024, ADR-004).
+        set_time_limit(300);
 
         $startYear = $request->session()->get($this->sessionYearKey(), (int) now()->year);
         $absolutePath = Storage::path($path);
